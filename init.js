@@ -50,6 +50,39 @@
 		writable: false
 	});
 
+	//Init message channel
+	var msgChannel = new MessageChannel();
+	var secret = "SECRET";
+	var handlers = [];
+
+	msgChannel.port1.onmessage = function(event) {
+		let label = event.data.label;
+		let msg = event.data.msg;
+		
+		if(event.data.secret != secret)
+		{
+			console.log("[Error] Incorrect secret code");
+			return;
+		}
+
+		for(let i=0; i<handlers.length; i++)
+		{
+			let handler = handlers[i];
+
+			if(handler.hasOwnProperty("msgLabel"))
+			{
+				let matchedLabel = intersect(handler.msgLabel, label);
+
+				if(matchedLabel.length > 0)
+				{
+					handler.msgHandler(matchedLabel, msg); 
+				}
+			}
+		}
+	};	
+
+	navigator.serviceWorker.controller.postMessage({"label": ["SWAPP_INIT"], "msg": "", "secret": secret}, [msgChannel.port2]);
+
 	//__EOF__
 
 })();

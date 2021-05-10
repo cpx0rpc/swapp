@@ -92,6 +92,9 @@ function f2f()
 	let respOrder = [];	// List of the execution order of response handlers
 	let tcbOrder = [];	// List of the execution order of tcb handlers
 
+	let secret = makeid(128);
+	let msgChannel = [];
+
 	// Internal state variables
 	let requireSandbox = false;
 	let SBActivated = false;
@@ -102,6 +105,24 @@ function f2f()
 	this.setSandbox = function(reqSB){
 		requireSandbox = reqSB;
 	};
+
+	function makeid(length) 
+	{
+		var result           = [];
+		var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+		var charactersLength = characters.length;
+		for ( var i = 0; i < length; i++ ) 
+		{
+			result.push(characters.charAt(Math.floor(Math.random() * charactersLength)));
+	   	}
+
+		return result.join('');
+	}
+
+	function intersect(a, b) {
+		var setB = new Set(b);
+		return [...new Set(a)].filter(x => setB.has(x));
+	}
 
 	function reorder(arr, app, mProp, oProp)
 	{
@@ -507,6 +528,53 @@ function f2f()
 	{
 		let fObject = await resp.text().then((body) => processResponse(resp, body));
 		return new Response(fObject.getBody(), fObject.getMetadata());
+	}
+
+	// External function to handle and dispatch postMessage
+	this.handleMessage = function(event)
+	{
+		let label = event.data.label;
+		let msg = event.data.msg;
+		let sender = event.ports[0];
+		
+		if(event.data.secret != secretCode)
+		{
+			console.log("[Error] Incorrect secret code");
+			return;
+		}
+
+		if(intersect(label, ["SWAPP_INIT"]).length > 0)
+		{
+			msgChannel.push(sender);
+			return;
+		}
+
+		for(let i=0; i<apps.length; i++)
+		{
+			let app = apps[i];
+
+			if(app.hasOwnProperty("msgLabel"))
+			{
+				let matchedLabel = intersect(app.msgLabel, label);
+
+				if(matchedLabel.length > 0)
+				{
+					app.msgHandler(matchedLabel, msg, sender); 
+				}
+			}
+		}
+	}
+
+	this.broadcastMsg = function(label, msg)
+	{
+		for(let i=0; i<msgChannel.length; i++)
+		{
+			msgChannel[i].postMessage({"label": label, "msg": msg, "secret": secret});
+		}
+
+		/*self.clients.matchAll().then(clients => {
+			clients.forEach(client => client.postMessage({"label": label, "msg": msg, "secret": secret});
+		});*/
 	}
 }
 

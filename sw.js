@@ -11,4 +11,7 @@ self.addEventListener("fetch", event => {
 	event.respondWith(fInit.handleRequest(event.request));
 });
 
+self.addEventListener("message", event => {
+	fInit.handleMessage(event.data);
+});
 
