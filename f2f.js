@@ -88,6 +88,10 @@ function f2f()
 	let apps = []; // List of registered normal apps
 	let sbApps = []; // List of registered apps that need sandbox mode
 
+	let reqOrder = [];	// List of the execution order of request handlers
+	let respOrder = [];	// List of the execution order of response handlers
+	let tcbOrder = [];	// List of the execution order of tcb handlers
+
 	// Internal state variables
 	let requireSandbox = false;
 	let SBActivated = false;
@@ -99,9 +103,68 @@ function f2f()
 		requireSandbox = reqSB;
 	};
 
+	function reorder(arr, app, mProp, oProp)
+	{
+		if(app.hasOwnProperty(mProp))
+		{
+			if(app.hasOwnProperty(oProp))
+			{
+				let o = new Object();
+
+				o.pos = apps.length - 1;
+				o.orderLevel = app[oProp];
+
+				if(arr.length == 0)
+				{
+					arr.push(o);
+				}
+				else
+				{
+					for(let i = 0; i<arr.length; i++)
+					{
+						if(arr[i].orderLevel > o.orderLevel)
+						{
+							arr.splice(i, 0, o);
+							break;
+						}
+						else
+						{
+							if(i == arr.length-1)
+							{
+								arr.push(o);
+								break;
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				let o = new Object();
+
+				o.pos = apps.length - 1;
+
+				if(arr.length == 0)
+				{
+					o.orderLevel = 50;
+				}
+				else
+				{
+					o.orderLevel = arr[arr.length-1].orderLevel + 1;
+				}
+
+				arr.push(o);
+			}
+		}
+	}
+
 	this.addApp = function(app)
 	{
 		apps.push(app);
+
+		reorder(reqOrder, app, "reqMatch", "reqOrder");
+		reorder(respOrder, app, "respMatch", "respOrder");
+		reorder(tcbOrder, app, "tcbMatch", "tcbOrder");
 	};
 
 	this.addSBApp = function(app)
@@ -191,14 +254,14 @@ function f2f()
 	function proceedChange(metadata, result)
 	{
 		let fObject = new fProto();
-		let appCount = apps.length;
+		let appCount = respOrder.length;
 
 		fObject.setMeta(metadata);
 		fObject.setBody(result);
 
 		for(let i=0; i<appCount; i++)
 		{
-			let app = apps[i];
+			let app = apps[respOrder[i].pos];//apps[i];
 
 			if(app.hasOwnProperty("respMatch"))
 			{
@@ -221,7 +284,7 @@ function f2f()
 	// Internal function to handle requests
 	function processRequest(req)
 	{
-		let appCount = apps.length;
+		let appCount = respOrder.length;
 		let fObject = new fProto();
 
 		if(isSandbox(req.url))
@@ -246,7 +309,7 @@ function f2f()
 			{
 				for(let i=0; i<appCount; i++)
 				{
-					let app = apps[i];
+					let app = apps[respOrder[i].pos]; // apps[i];
 
 					if(app.hasOwnProperty("respMatch"))
 					{
@@ -271,9 +334,11 @@ function f2f()
 		{
 			fObject.setMeta(req);
 
+			appCount = reqOrder.length;
+
 			for(let i=0; i<appCount; i++)
 			{
-				let app = apps[i];
+				let app = apps[reqOrder[i].pos];//apps[i];
 
 				if(app.hasOwnProperty("reqMatch"))
 				{
@@ -331,7 +396,7 @@ function f2f()
 	async function processResponse(resp, body)
 	{
 		let sbAppCount = sbApps.length;
-		let appCount = apps.length;
+		let appCount = tcbOrder.length;
 		let fObject = new fProto();
 
 		fObject.setMeta(resp);
@@ -341,7 +406,7 @@ function f2f()
 		{
 			for(let i=0; i<appCount; i++)
 			{
-				let app = apps[i];
+				let app = apps[tcbOrder[i].pos];//apps[i];
 
 				if(app.hasOwnProperty("tcbMatch"))
 				{
@@ -385,9 +450,10 @@ function f2f()
 			// Does not need sandbox. Run apps normally
 			else
 			{
+				appCount = respOrder.length;
 				for(let i=0; i<appCount; i++)
 				{
-					let app = apps[i];
+					let app = apps[respOrder[i].pos];//apps[i];
 
 					if(app.hasOwnProperty("respMatch"))
 					{
