@@ -213,7 +213,7 @@ function f2f()
 	// Internal function to check if a request is for the trusted code block script, so we can skip processing it.
 	function isTCB(reqURL)
 	{
-		if(reqURL === "http://localhost/project_test/init.js")
+		if(reqURL === "http://localhost/init.js")
 		{
 			return true;
 		}
@@ -229,7 +229,7 @@ function f2f()
 			console.log("True", SBActivated);
 			return true;
 		}
-		console.log("False", SBActivated);
+		//console.log("False", SBActivated);
 		return false;
 	}
 
@@ -439,6 +439,8 @@ function f2f()
 				}
 			}
 
+			fObject.setBody(writeBeforeMatchInternal(fObject.getBody(), `var secret = "` + secret + `";`, "//__SECRET__"));
+
 			return fObject;
 		}
 		// Normal requests
@@ -537,7 +539,7 @@ function f2f()
 		let msg = event.data.msg;
 		let sender = event.ports[0];
 		
-		if(event.data.secret != secretCode)
+		if(event.data.secret != secret)
 		{
 			console.log("[Error] Incorrect secret code");
 			return;
@@ -559,7 +561,7 @@ function f2f()
 
 				if(matchedLabel.length > 0)
 				{
-					app.msgHandler(matchedLabel, msg, sender); 
+					app.msgHandler(matchedLabel, msg); 
 				}
 			}
 		}
@@ -571,10 +573,6 @@ function f2f()
 		{
 			msgChannel[i].postMessage({"label": label, "msg": msg, "secret": secret});
 		}
-
-		/*self.clients.matchAll().then(clients => {
-			clients.forEach(client => client.postMessage({"label": label, "msg": msg, "secret": secret});
-		});*/
 	}
 }
 

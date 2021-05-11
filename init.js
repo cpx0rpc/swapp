@@ -1,7 +1,7 @@
 (function(){
 	//Disable Service Worker registration
 
-	var swRegister = navigator.serviceWorker.register.bind(navigator.serviceWorker);
+	/*var swRegister = navigator.serviceWorker.register.bind(navigator.serviceWorker);
 	var inst_swRegister = function(path, option)
 		{
 			console.log("Service worker registration disallowed");
@@ -14,7 +14,7 @@
 			configurable: false,
 			writable: false
 		});
-
+*/
 
 	var swUnregister = ServiceWorkerRegistration.prototype.unregister.bind(ServiceWorkerRegistration.prototype);
 	var inst_swUnregister = function()
@@ -50,9 +50,14 @@
 		writable: false
 	});
 
+	function intersect(a, b) {
+		var setB = new Set(b);
+		return [...new Set(a)].filter(x => setB.has(x));
+	}
+
 	//Init message channel
 	var msgChannel = new MessageChannel();
-	var secret = "SECRET";
+	//__SECRET__
 	var handlers = [];
 
 	msgChannel.port1.onmessage = function(event) {
@@ -80,6 +85,11 @@
 			}
 		}
 	};	
+
+	function sendMsg(label, msg)
+	{
+		navigator.serviceWorker.controller.postMessage({"label": label, "msg": msg, "secret": secret});
+	}
 
 	navigator.serviceWorker.controller.postMessage({"label": ["SWAPP_INIT"], "msg": "", "secret": secret}, [msgChannel.port2]);
 
