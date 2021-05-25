@@ -502,7 +502,7 @@ function f2f()
     // Internal function to inject the TCB into pages
     function initDocumentContext(fObject)
     {
-        return writeAfterMatchInternal(fObject.getBody(), "\n\t<script src=\"init.js\"></script>", "<head>");
+        return writeAfterMatchInternal(fObject.getBody(), "\n\t<script src=\"./tcb/init.js\"></script>", "<head>");
     }
 
     // External function to handle requests

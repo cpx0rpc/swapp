@@ -51,10 +51,12 @@ appObj.respApply = function(fObject){
                                    fObject.getBody());
     if(sig)
     {
+        fObject.setDecision("true");
         return fObject;
     }
     else 
     {
+        fObject.setDecision("deny");
         return false;
     }
 };
