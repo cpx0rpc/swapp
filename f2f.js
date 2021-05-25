@@ -519,6 +519,11 @@ function f2f()
 			fObject.setBody(writeBeforeMatchInternal(fObject.getBody(), "<script> window.history.pushState(\"\", \"\", \"" + fObject.getMetadata().url + "\"); </script>"));
 			return new Response(fObject.getBody(), fObject.getMetadata());
 		}
+		else if(fObject.getDecision() == "cache")
+		{
+			let r = new Response(fObject.getBody(), fObject.getMetadata());
+			return r;
+		}
 		else
 		{
 			//return error
