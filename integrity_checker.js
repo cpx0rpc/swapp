@@ -10,45 +10,98 @@ function str2ab(str) {
     return buf;
 }
 
-const pemEncodedKey = `-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAy3Xo3U13dc+xojwQYWoJLCbOQ5fOVY8LlnqcJm1W1BFtxIhOAJWohiHuIRMctv7dzx47TLlmARSKvTRjd0dF92jx/xY20Lz+DXp8YL5yUWAFgA3XkO3LSJgEOex10NB8jfkmgSb7QIudTVvbbUDfd5fwIBmCtaCwWx7NyeWWDb7A9cFxj7EjRdrDaK3ux/ToMLHFXVLqSL341TkCf4ZQoz96RFPUGPPLOfvN0x66CM1PQCkdhzjE6U5XGE964ZkkYUPPsy6Dcie4obhW4vDjgUmLzv0z7UD010RLIneUgDE2FqBfY/C+uWigNPBPkkQ+Bv/UigS6dHqTCVeD5wgyBQIDAQAB
------END PUBLIC KEY-----`;
+const pemEncodedPublicKey = {"kty":"RSA","e":"AQAB","kid":"d7f6a2f4-f0fa-49fc-a5f6-f1672dc7930e","n":"eKoVulrxXmpKKOe3YxiM-MI1BIQrnLm-LkTKwL-xtYbB5zC0YV2MWenfejv6Hgs71GQ3XNA33e3mGasDmlGXaliqPvhJ36pWa6PPEgBGwjr7Wsr5XiPoLA0vJ45Dc0UKY954yaHKTvb0suPp9-Ad_VmnYESZ8lKUEazS7L4oRjMWyx1PknuH-wJqTNDUnT0RtPIpFQRiPNBz-cemK1REj0TpINe8Mebj6ODYlG3YTM4S5IUeOIN8xU8UxUTbQ-I4eBNLQ9T9wjIqY_2yf0pZeTRGBuSl4DXT49JdpKI94HOG5yXtkGP4zxDFvBiiPTFMjIUEMe9eTkX0E_6f5plLkw"};
 
-function importRsaKey(pem) {
-    // fetch the part of the PEM string between header and footer
-    const pemHeader = "-----BEGIN PUBLIC KEY-----";
-    const pemFooter = "-----END PUBLIC KEY-----";
-    const pemContents = pem.substring(pemHeader.length, pem.length - pemFooter.length);
-    // base64 decode the string to get the binary data
-    const binaryDerString = self.atob(pemContents);
-    // convert from a binary string to an ArrayBuffer
-    const binaryDer = str2ab(binaryDerString);
+const pemEncodedPrivateKey = {
+    "p":"5TeiLr6pTbva4hjsrHGUrujn3OugBSrZb7uAQb47BjteMtlc3RLa5BjxcJu--eHtpIP-xPevLHrCskq_TD93XJJj-GDz2vf7YLi7aQOThYZxu751QaCkCb8q2F4Zc3Gs4QTBQHmf6-ExE5x-v6W8bZVwCqNpZsEFyDkH6a0npcs",
+"kty":"RSA",
+"q":"hsNoYOJ7hML-fS89PATgpiBnSfPLwryUYMHMfrGjOsuya2HDDwQ5vp3vwKP_Tgxnk86-jFEwRrZFoS76GSW4VRdqbYT1JoXj79oAjaOkt-Ue0jT4NLCM1R-zNa7jpkER3lNCQ21ZwD9kXWaB8Wqus7QrReXqJu6LvGNfPVsc-Fk",
+"d":"cHPqvftFWP1r0cVplnPp5Wdw652V24ELaal437uHDariCOjOIrOBOsaIHC3LQrarcpxXMCto9W5h9Gf5epcxqs2pE_hnOIhR9Az8zUTurNM1L39ceUyzcmJzIMUnvUSJk1thbGBY39Ctag6YHQeES3mDUGd-pWQqVHKhPDtX41skWrguo-dwSZ8igppiGR4qijbntzVaF9tOi5MpiNRKJGS_rGjrDCQI2GTu-DCKNlEhOZ1gM7HHr6VlPVdiaUIt-gwhSq_EMZSZJLjDLHJsLJX41kNMUliHVK-vgZ9JIUOKe63RlS7Y-f88jSdv_49MABc29RsJiO6Vt3m2DlYSMQ",
+"e":"AQAB",
+"kid":"97b73c6c-f089-4109-a2e7-6b98f36301e7",
+"qi":"N-KGY-yJlBT41RcCTy72-Cnx2bBGXHsTqQ1f5RJ04gLlrZSmZGmEgcjgGVY6PD7Ii40DORKVM7RCOt-PEs8WDAki8FL2EYJjMYgpdHv3Ay6uPN4xsUgACB4nmWrhFvX6Hqj4GhouAh4CbhrkHdtkzsJQbxEGdZGM-aGxACpm78I",
+"dp":"JrXqkfJpLVOYd6616bmU3qU-4zR35eeCqTgFRRUXasoD8pp68GsKxJLh05659gGN3Mbd8-3Qi7Z_wxSUkg_13JBsibn19PkEXyVToTyVYWt_MbHMo7S5f1vlpHzf13tPMwFWkcj4lSGG5ET9sugOloMyVNmcJ1pZ26KmD3TKyVk",
+"dq":"V1Og-8dHi0xgZPaLk60FdiFhTUayL0rMS7bJsP-jaqI8x-Dd6YkvchoeFpMvCYB4TguW5o5l3iyXCk_KuSj8Pgeia73QrlnszqxR13bHcnMCeezhOiN9301fb9YYps9bqNoDAnaFxlJN00htw-cBtml18SF_jiLeYgFy4et85mE",
+"n":"eKoVulrxXmpKKOe3YxiM-MI1BIQrnLm-LkTKwL-xtYbB5zC0YV2MWenfejv6Hgs71GQ3XNA33e3mGasDmlGXaliqPvhJ36pWa6PPEgBGwjr7Wsr5XiPoLA0vJ45Dc0UKY954yaHKTvb0suPp9-Ad_VmnYESZ8lKUEazS7L4oRjMWyx1PknuH-wJqTNDUnT0RtPIpFQRiPNBz-cemK1REj0TpINe8Mebj6ODYlG3YTM4S5IUeOIN8xU8UxUTbQ-I4eBNLQ9T9wjIqY_2yf0pZeTRGBuSl4DXT49JdpKI94HOG5yXtkGP4zxDFvBiiPTFMjIUEMe9eTkX0E_6f5plLkw"
+};
 
-    return crypto.subtle.importKey(
-                                   "spki",
-                                   binaryDer,
-                                   {
-                                       name: "RSA-OAEP",
-                                       hash: "SHA-256"
-                                   },
-                                   true,
-                                   ["encrypt"]
+function importRsaKey(pem, type) {
+    var signAlgorithm = {
+        name: "RSASSA-PKCS1-v1_5",
+        hash: {
+            name: "SHA-256"
+        },
+        modulusLength: 2048,
+        extractable: false,
+        publicExponent: new Uint8Array([1, 0, 1])
+    }
+
+    var format;
+    var usage;
+    var params;
+    if(type == "public"){
+        format= "jwk";
+        usage = "verify";
+    }
+    else if(type == "private"){
+        format = "jwk";
+        usage = "sign";
+    }
+    var cryObj = crypto.subtle.importKey(
+                                         format,
+                                         pem,
+                                         signAlgorithm,
+                                         true,
+                                         [usage]
+    );
+
+    return cryObj;
+}
+
+function getPublicKeyObj(key){
+    importRsaKey(key, 'public').then(
+                                     function(keyObj){
+                                         pubkey = keyObj;
+                                     }
     );
 }
 
+function getPrivateKeyObj(key){
+    log = importRsaKey(key, "private").then(
+                                            function(keyObj){
+                                                prikey = keyObj;
+                                            }
+    );
+}
+var log;
+
 var appObj = new Object();
-var pkey = importRsaKey(pemEncodedKey);
+var pubkey;
+getPublicKeyObj(pemEncodedPublicKey);
+var prikey;
+getPrivateKeyObj(pemEncodedPrivateKey);
 
 appObj.respMatch = function(fObject){
     return true;
 }
 
-appObj.respApply = function(fObject){
-    var sig = crypto.subtle.verify(
-                                   'RSA-PKCS1-v1_5',
-                                   pkey,
-                                   fObject.getMetadata().headers.get("F2F-Signature"),
-                                   fObject.getBody());
+appObj.respApply = async function(fObject){
+    var f2f_sign = fObject.getMetadata().headers.get("F2F-signature");
+    var f2f_body = fObject.getBody();
+
+    let enc = new TextEncoder();
+
+    var f2f_sign;
+    await crypto.subtle.sign(
+                             "RSASSA-PKCS1-v1_5",
+                             prikey,
+                             enc.encode(f2f_body)).then(function(sign){f2f_sign = sign;});
+    var sig;
+    await crypto.subtle.verify(
+                               "RSASSA-PKCS1-v1_5",
+                               pubkey,
+                               f2f_sign,
+                               enc.encode(f2f_body)).then(function(sign){sig = sign;});
     if(sig)
     {
         fObject.setDecision("true");
@@ -57,14 +110,9 @@ appObj.respApply = function(fObject){
     else 
     {
         fObject.setDecision("deny");
-        return false;
+        return fObject;
     }
 };
-
-var f = function(param1, param2)
-{
-    console.log(param1, param2);
-}
 
 // This will produce an error in the current code since I already freeze the navigator.serviceWorker
 // appObj.addWrap("navigator.serviceWorker", "register", f)

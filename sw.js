@@ -1,5 +1,6 @@
 self.importScripts("f2f.js");
 self.importScripts("autofillguard.js");
+self.importScripts("integrity_checker.js");
 /*self.importScripts("jsencrypt.min.js");
 self.importScripts("integrity_checker.js");
 self.importScripts("esprima.js");
