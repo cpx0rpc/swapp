@@ -213,7 +213,9 @@ function f2f()
     // Internal function to check if a request is for the trusted code block script, so we can skip processing it.
     function isTCB(reqURL)
     {
-        if(reqURL === "http://localhost/init.js")
+        //if(reqURL === "http://localhost/init.js")
+        var re = /\/tcb\/[^\/]*.js/;
+        if(re.test(reqURL))
         {
             return true;
         }
