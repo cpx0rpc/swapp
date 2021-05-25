@@ -19,7 +19,7 @@ appObj.respMatch = function(fObj)
 	return false;
 }
 
-appObj.respApply = function(fObj)
+appObj.respApply = async function(fObj)
 {
 	let body = fObj.getBody();
 	let form_match_exp = /<form.*<\/form>/s;

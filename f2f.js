@@ -307,7 +307,7 @@ function f2f()
     // Internal function to handle requests
     function processRequest(req)
     {
-        let appCount = respOrder.length;
+        let appCount = reqOrder.length;
         let fObject = new fProto();
 
         if(isSandbox(req.url))
@@ -332,13 +332,13 @@ function f2f()
             {
                 for(let i=0; i<appCount; i++)
                 {
-                    let app = apps[respOrder[i].pos]; // apps[i];
+                    let app = apps[reqOrder[i].pos]; // apps[i];
 
-                    if(app.hasOwnProperty("respMatch"))
+                    if(app.hasOwnProperty("reqMatch"))
                     {
-                        if(app.respMatch(fObject))
+                        if(app.reqMatch(fObject))
                         {
-                            fObject = app.respApply(fObject);
+                            fObject = app.reqApply(fObject);
                         }
                     }
                 }
@@ -484,7 +484,10 @@ function f2f()
                     {
                         if(app.respMatch(fObject))
                         {
-                            fObject = app.respApply(fObject);
+                            app.respApply(fObject).then(
+                                                        function(result){
+                                                            fObject = result;
+                                                        });
                         }
                     }
                 }
