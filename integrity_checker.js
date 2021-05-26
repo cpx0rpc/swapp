@@ -1,4 +1,7 @@
-// Example module + app to instrument native JS APIs
+// App Name: Integrity Checker
+// Description: Check the integrity of each response by verifying the signature of the response body.
+//              Server-side implementation is needed to inejct an HTTP header 'f2f-signature' for each
+//              response, which contains the original signature. 
 
 // from https://developers.google.com/web/updates/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
 function str2ab(str) {
@@ -10,8 +13,10 @@ function str2ab(str) {
     return buf;
 }
 
+// public key in jwk format
 const pemEncodedPublicKey = {"kty":"RSA","e":"AQAB","kid":"d7f6a2f4-f0fa-49fc-a5f6-f1672dc7930e","n":"eKoVulrxXmpKKOe3YxiM-MI1BIQrnLm-LkTKwL-xtYbB5zC0YV2MWenfejv6Hgs71GQ3XNA33e3mGasDmlGXaliqPvhJ36pWa6PPEgBGwjr7Wsr5XiPoLA0vJ45Dc0UKY954yaHKTvb0suPp9-Ad_VmnYESZ8lKUEazS7L4oRjMWyx1PknuH-wJqTNDUnT0RtPIpFQRiPNBz-cemK1REj0TpINe8Mebj6ODYlG3YTM4S5IUeOIN8xU8UxUTbQ-I4eBNLQ9T9wjIqY_2yf0pZeTRGBuSl4DXT49JdpKI94HOG5yXtkGP4zxDFvBiiPTFMjIUEMe9eTkX0E_6f5plLkw"};
 
+// private key in jwk format
 const pemEncodedPrivateKey = {
     "p":"5TeiLr6pTbva4hjsrHGUrujn3OugBSrZb7uAQb47BjteMtlc3RLa5BjxcJu--eHtpIP-xPevLHrCskq_TD93XJJj-GDz2vf7YLi7aQOThYZxu751QaCkCb8q2F4Zc3Gs4QTBQHmf6-ExE5x-v6W8bZVwCqNpZsEFyDkH6a0npcs",
 "kty":"RSA",
@@ -25,6 +30,7 @@ const pemEncodedPrivateKey = {
 "n":"eKoVulrxXmpKKOe3YxiM-MI1BIQrnLm-LkTKwL-xtYbB5zC0YV2MWenfejv6Hgs71GQ3XNA33e3mGasDmlGXaliqPvhJ36pWa6PPEgBGwjr7Wsr5XiPoLA0vJ45Dc0UKY954yaHKTvb0suPp9-Ad_VmnYESZ8lKUEazS7L4oRjMWyx1PknuH-wJqTNDUnT0RtPIpFQRiPNBz-cemK1REj0TpINe8Mebj6ODYlG3YTM4S5IUeOIN8xU8UxUTbQ-I4eBNLQ9T9wjIqY_2yf0pZeTRGBuSl4DXT49JdpKI94HOG5yXtkGP4zxDFvBiiPTFMjIUEMe9eTkX0E_6f5plLkw"
 };
 
+// Convert the rsa key from string to CyptoKey Objects
 function importRsaKey(pem, type) {
     var signAlgorithm = {
         name: "RSASSA-PKCS1-v1_5",
@@ -58,6 +64,7 @@ function importRsaKey(pem, type) {
     return cryObj;
 }
 
+// Store the CryptoKey object of the public key to the global variable
 function getPublicKeyObj(key){
     importRsaKey(key, 'public').then(
                                      function(keyObj){
@@ -66,6 +73,7 @@ function getPublicKeyObj(key){
     );
 }
 
+// Store the CryptoKey object of the private key to the global variable
 function getPrivateKeyObj(key){
     log = importRsaKey(key, "private").then(
                                             function(keyObj){
@@ -73,29 +81,37 @@ function getPrivateKeyObj(key){
                                             }
     );
 }
+
+// [testing only]
 var log;
 
+// initilize the app object and global varibales inside the app
 var appObj = new Object();
 var pubkey;
 getPublicKeyObj(pemEncodedPublicKey);
 var prikey;
 getPrivateKeyObj(pemEncodedPrivateKey);
 
+// Match all the responses
 appObj.respMatch = function(fObject){
     return true;
 }
 
+// Verify the signature and return deny if a mismatching is found
 appObj.respApply = async function(fObject){
     var f2f_sign = fObject.getMetadata().headers.get("F2F-signature");
     var f2f_body = fObject.getBody();
 
     let enc = new TextEncoder();
 
+    // [testing only] generate the signature to pass the verification. should be moved to the server side.
     var f2f_sign;
     await crypto.subtle.sign(
                              "RSASSA-PKCS1-v1_5",
                              prikey,
                              enc.encode(f2f_body)).then(function(sign){f2f_sign = sign;});
+
+    // Verify the signature
     var sig;
     await crypto.subtle.verify(
                                "RSASSA-PKCS1-v1_5",
@@ -114,9 +130,5 @@ appObj.respApply = async function(fObject){
     }
 };
 
-// This will produce an error in the current code since I already freeze the navigator.serviceWorker
-// appObj.addWrap("navigator.serviceWorker", "register", f)
-
 fInit.addApp(appObj);
 fInit.addSBApp(appObj);
-
