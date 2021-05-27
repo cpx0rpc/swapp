@@ -463,6 +463,7 @@ function f2f()
         // Proceed to fetch and modify the response accordingly
         if(fObject.getDecision() == "true")
         {
+						console.log(fObject.getMetadata());
             return fetch(req).then((resp) => handleResponse(resp));
         }
         else if(fObject.getDecision() == "sandboxDone")
@@ -488,6 +489,12 @@ function f2f()
     // Internal function to handle responses
     async function handleResponse(resp)
     {
+				// If the response is invalid to reconstruct, then return the original without processing.
+				if(resp.type == "opaqueredirect" || resp.type == "error" || resp.type == "opaque")
+				{
+					return resp;
+				}
+
         let fObject = await resp.text().then((body) => processResponse(resp, body));
         return new Response(fObject.getBody(), fObject.getMetadata());
     }
