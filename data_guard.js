@@ -1,14 +1,36 @@
-// Example module + app to instrument native JS APIs
+// App Name: Data Guard
+// Description: Data Guard is to preserve data inside service worker so that
+//              the data won't be accessible in the document context. By doing
+//              so, we can protect the data from being stolen by XSS attackers.
 
 var appObj = new Object();
-var pkey = importRsaKey(pemEncodedKey);
+
+var request;
+
+function dg_init(){
+    f2fInst.storage.createTable("data_guard", "entry", ['value']);
+}
 
 appObj.respMatch = function(fObject){
     return true;
 }
 
-appObj.respApply = function(fObject){
-    
+appObj.respApply = async function(fObject){
+    var transaction = f2fInst.storage.db.transaction('data_guard', 'readwrite');
+    var store = transaction.objectStore('data_guard');
+
+    var new_cookies = fObject.getMetadata().headers.get("Set-Cookies");
+    if(new_cookies){
+        var req = store.get("Cookies");
+        req.onsuccess = function(event){
+            store.put({
+                  entry: "Cookies",
+                  value: req.result + ";" + new_cookies
+            });
+        }
+    }
+
+    return fObject;
 };
 
 appObj.reqMatch = function(fObject){
@@ -16,17 +38,13 @@ appObj.reqMatch = function(fObject){
 }
 
 appObj.reqApply = function(fObject){
-
+    return fObject;
 }
 
-var f = function(param1, param2)
-{
-    console.log(param1, param2);
-}
+dg_init();
 
-// This will produce an error in the current code since I already freeze the navigator.serviceWorker
-// appObj.addWrap("navigator.serviceWorker", "register", f)
-
-fInit.addApp(appObj);
-fInit.addSBApp(appObj);
+setTimeout(function () {
+    f2fInst.addApp(appObj);
+    f2fInst.addSBApp(appObj);
+}, 500)
 

@@ -130,5 +130,8 @@ appObj.respApply = async function(fObject){
     }
 };
 
-fInit.addApp(appObj);
-fInit.addSBApp(appObj);
+setTimeout(function () {
+    f2fInst.addApp(appObj);
+    f2fInst.addSBApp(appObj);
+}, 500)
+

@@ -69,4 +69,4 @@ appObj.reqApply = function(fObj)
 	return fObj;
 }
 
-fInit.addApp(appObj);
+f2fInst.addApp(appObj);
