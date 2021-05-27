@@ -13,6 +13,37 @@ function fProto()
         decision = givenDecision;
     };
 
+		this.updateMeta = function(update){
+			if(metadata.constructor === Request)
+			{
+				let mObj = {
+					cache: update.cache || metadata.cache,
+					context: update.context || metadata.context,
+					credentials: update.credentials || metadata.credentials,
+					destination: update.destination || metadata.destination,
+					headers: update.headers || metadata.headers,
+					integrity: update.integrity || metadata.integrity,
+					method: update.method || metadata.method,
+					//mode: update.mode || metadata.mode,
+					redirect: update.redirect || metadata.redirect,
+					referrer: update.referrer || metadata.referrer,
+					referrerPolicy: update.referrerPolicy || metadata.referrerPolicy,
+					body: update.body || metadata.body,
+					bodyUsed: update.bodyUsed  || metadata.bodyUsed
+				};
+
+				metadata = new Request(update.url || metadata.url, mObj);
+			}
+			else if(metadata.constructor === Response)
+			{
+				console.log("Response metadata not allowed to be modified");
+			}
+			else
+			{
+				console.log("Error metadata type detected");
+			}
+		};
+
     this.setMeta = function(givenMetadata){
         metadata = givenMetadata;
     };
@@ -463,7 +494,6 @@ function f2f()
         // Proceed to fetch and modify the response accordingly
         if(fObject.getDecision() == "true")
         {
-						console.log(fObject.getMetadata());
             return fetch(req).then((resp) => handleResponse(resp));
         }
         else if(fObject.getDecision() == "sandboxDone")
