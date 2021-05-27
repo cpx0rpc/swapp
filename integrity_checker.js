@@ -132,6 +132,5 @@ appObj.respApply = async function(fObject){
 
 setTimeout(function () {
     f2fInst.addApp(appObj);
-    f2fInst.addSBApp(appObj);
 }, 500)
 

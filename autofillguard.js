@@ -77,7 +77,6 @@ appObj.reqMatch = function(fObj)
 		{
 			if(!onGoing)
 			{
-				console.log("Found:", k);
 				onGoing = true;
 				return true;
 			}
@@ -90,7 +89,6 @@ appObj.reqMatch = function(fObj)
 
 	if(fObj.getMetadata().url == "http://localhost/autofill/forwarding")
 	{
-		console.log("Forwarding detected");
 		return true;
 	}
 
@@ -113,48 +111,24 @@ appObj.reqApply = function(fObj)
 		if(fObj.getMetadata().url != currURL)
 		{
 			fetch(fObj.getMetadata(), {redirect: 'follow'}).then(resp => {
-				console.log("Forwarding resp: ", resp);
 				resp.text().then(body => {
 					f2fInst.broadcastMsg(["AUTOFILLGUARD"], resp.url);
 
 					currURL = resp.url;
 					currBody = body;
-					console.log("Body: ", currBody);
 				})
 			});
-			/*currReq = new fProto();
-			currReq.setMeta(fObj.getMetadata());
-			currReq.updateMeta({destination: ""});
-			currReq.setBody(fObj.getBody());*/
+
 			fObj.setMeta({"status": 200, "statusText": "OK", "headers": {'Content-Type': 'text/html'}});
 			fObj.setBody("Autofill Guard Loading");
 			fObj.setDecision("cache");
-			
-
-			//Notify TCB
-			/*console.log(fObj.getMetadata(), fObj.getBody());
-			let msg = JSON.stringify({url: fObj.getMetadata().url, method: "POST", body: JSON.stringify({id: 'GuEng', password: 'muasus'})});
-			console.log(msg);*/
-			
 		}
 		else
 		{
-			/*console.log("Forwarding info: ", fObj.getMetadata(), fObj.getBody());
-			console.log("Current info: ", currReq.getMetadata(), currReq.getBody());
-			r = new Request(currReq.getMetadata().url, {bodyUsed: true, body: currReq.getMetadata().body, method: "POST", referrer: currReq.getMetadata().referrer});
-			fObj.setMeta(r);
-			fObj.setBody(currReq.getBody());
-			fObj.setDecision("true");
-
-			console.log("Final info: ", fObj.getMetadata(), fObj.getBody());*/
 			fObj.setMeta({"status": 200, "statusText": "OK", "headers": {'Content-Type': 'text/html'}});
 			fObj.setBody(currBody);
 			fObj.setDecision("cache");
 		}
-	}
-	if(fObj.getMetadata().url == "http://localhost/form_submit.php")
-	{
-		console.log("Original: ", fObj.getMetadata(), fObj.getBody());
 	}
 
 	return fObj;
