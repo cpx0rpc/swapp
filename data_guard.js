@@ -19,14 +19,22 @@ appObj.respApply = async function(fObject){
     var transaction = f2fInst.storage.db.transaction('data_guard', 'readwrite');
     var store = transaction.objectStore('data_guard');
 
-    var new_cookies = fObject.getMetadata().headers.get("Set-Cookies");
+    var new_cookies = fObject.getMetadata().headers.get("Set-Cookie");
+    new_cookies = fObject.getMetadata().headers.get("F2F");
     if(new_cookies){
         var req = store.get("Cookies");
         req.onsuccess = function(event){
-            store.put({
-                  entry: "Cookies",
-                  value: req.result + ";" + new_cookies
-            });
+            if(req.result){
+                store.put({
+                          entry: "Cookies",
+                          value: req.result["value"] + ";" + new_cookies
+                });
+            } else {
+                store.put({
+                          entry: "Cookies",
+                          value: new_cookies
+                });
+            }
         }
     }
 
@@ -38,6 +46,13 @@ appObj.reqMatch = function(fObject){
 }
 
 appObj.reqApply = function(fObject){
+    var transaction = f2fInst.storage.db.transaction('data_guard', 'readwrite');
+    var store = transaction.objectStore('data_guard');
+
+    var req = store.get("Cookies");
+    req.onsuccess = function(event){
+        //fObject.getHeaders().append("Cookies", req.result["value"]);
+    }
     return fObject;
 }
 
@@ -45,6 +60,5 @@ dg_init();
 
 setTimeout(function () {
     f2fInst.addApp(appObj);
-    f2fInst.addSBApp(appObj);
 }, 500)
 
