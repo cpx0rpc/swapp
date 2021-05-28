@@ -355,9 +355,22 @@ function f2f()
 				{
 					return resp;
 				}
-
+				// Skip if it is a font
+				let contentType = resp.headers.get("Content-Type");
+				if((contentType && contentType.includes("font")) || resp.url.includes(".woff") || resp.url.includes(".eot") || resp.url.includes(".otf") || resp.url.includes(".ttf"))
+				{
+					return resp;
+				}
+				// Currently buggy with gif images, so skip for now
+				if(contentType && contentType.includes("gif"))
+				{
+					return resp;
+				}
+				
         let fObject = await resp.text().then((body) => processResponse(resp, body));
-        return new Response(fObject.getBody(), fObject.getMetadata());
+				let ret = new Response(fObject.getBody(), fObject.getMetadata());
+				
+        return ret;
     }
 
     // External function to handle and dispatch postMessage
