@@ -8,6 +8,7 @@ function fProto()
     let decision = "true";
     let metadata = {};
     let body = "";
+    let headers = {};
 
     this.setDecision = function(givenDecision){
         decision = givenDecision;
@@ -52,8 +53,13 @@ function fProto()
         body = givenBody;
     };
 
+    this.setHeaders = function(givenHeaders){
+        headers = givenHeaders;
+    }
+
     this.getDecision = function(){return decision;};
     this.getMetadata = function(){return metadata;};
+    this.getHeaders = function(){return headers;};
     this.getBody = function(){return body;};
 }
 
@@ -231,6 +237,7 @@ function f2f()
         let fObject = new fProto();
 
         fObject.setMeta(req);
+        fObject.setHeaders(req.headers);
 
         appCount = reqOrder.length;
 
