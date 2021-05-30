@@ -170,7 +170,7 @@ function f2f()
 
         for(let i=0; i<list.length; i++)
         {
-            if(contentType === list[i])
+            if(contentType.includes(list[i]))
             {
                 return true;
             }
@@ -312,9 +312,10 @@ function f2f()
                     }
                 }
             }
-
+						
             if(isWebpage(fObject.getMetadata().headers.get("Content-Type")))
             {
+								
                 fObject.setBody(initDocumentContext(fObject));
             }
 

@@ -1,62 +1,129 @@
 var appObj = new Object();
-var curr_id = "0";
-var mTable = {};
-var iTable = {};
-var currReq;
-var onGoing = false;
-var currBody;
-var currURL = "";
 
-function next_id()
+appObj.curr_id = 0;
+appObj.mTable = {};
+appObj.iTable = {};
+appObj.onGoing = false;
+appObj.currBody = "";
+appObj.currURL = "";
+appObj.respMatchPath = [];
+appObj.actionMatch = [];
+
+appObj.setRespMatchPath = function(m)
 {
-	let int_id = parseInt(curr_id) + 1;
+	appObj.respMatchPath = m;
+}
 
-	curr_id = int_id.toString();
+appObj.setActionMatch = function(m)
+{
+	appObj.actionMatch = m;
+}
+
+appObj.next_id = function()
+{
+	let int_id = parseInt(appObj.curr_id) + 1;
+
+	appObj.curr_id = int_id.toString();
 }
 
 appObj.respMatch = function(fObj)
 {
-	if(fObj.getMetadata().url == "http://localhost/testautofill.html")
+	let urlString = fObj.getMetadata().url.toString();
+
+	if(appObj.respMatchPath.constructor === Array)
 	{
-		return true;
+		for(p in appObj.respMatchPath)
+		{ 
+			if(p.constructor === RegExp && urlString.match(p))
+			{
+				return true;
+			}
+			else if(p.constructor === String && urlString == p)
+			{
+				return true;
+			}
+		}
 	}
-	
+	else if(appObj.respMatchPath.constructor === RegExp)
+	{
+		if(urlString.match(appObj.respMatchPath))
+		{
+			return true;
+		}
+	}
+	else if(appObj.respMatchPath.constructor === String)
+	{
+		return urlString == appObj.respMatchPath;
+	}
+
 	return false;
 }
 
 appObj.respApply = async function(fObj)
 {
 	let body = fObj.getBody();
-	let form_match_exp = /<form.*<\/form>/s;
-	let f = body.match(form_match_exp);
+	let url = new URL(fObj.getMetadata().url);
 
-	if(f)
+	// Find forms
+	let form_match_exp = /<form[^]*?<\/form>/g;
+	let forms = body.match(form_match_exp);
+
+	if(forms)
 	{
-		let s = f.toString();
-		let url = new URL(fObj.getMetadata().url);
-		body = body.replace(form_match_exp, "<iframe src=http://" + url.hostname + "?autofillguardID=" + curr_id + " frameBorder=0></iframe>");
+		// Find matching forms
 
-		let found = s.match(/action\s*=.*?[>\s]/i);
-
-		if(found)
+		for(f in forms)
 		{
-			found = found[0].match(/=['"\s]*.*?['"]/i);
-			found = found[0].substring(1);
+			s = forms[f].toString();
 
-			if(found[0] == "\"" || found[0] == "\'")
+			let found = s.match(/action\s*=.*?[>\s]/i);
+
+			if(found)
 			{
-				found = found.substring(1, found.length-1);
+				found = found[0].match(/=['"\s]*.*?['"]/i);
+				found = found[0].substring(1);
+
+				if(found[0] == "\"" || found[0] == "\'")
+				{
+					found = found.substring(1, found.length-1);
+				}
+
+				let matched = false;
+
+				if(appObj.actionMatch.constructor === Array)
+				{
+					for(a in appObj.actionMatch)
+					{ 
+						if(found.match(a))
+						{
+							matched = true;
+						}
+					}
+				}
+				else if(appObj.actionMatch.constructor === RegExp)
+				{
+					matched = found.match(appObj.actionMatch);
+				}
+				else if(appObj.actionMatch.constructor === String && appObj.actionMatch == found)
+				{
+					matched = true;
+				}
+
+				if(matched)
+				{
+					u = new URL(found, url.origin);
+				
+					appObj.iTable[u.pathname] = appObj.curr_id;
+					appObj.mTable[appObj.curr_id] = s;
+
+					body = body.replace(form_match_exp, "<iframe src=http://" + url.hostname + "?autofillguardID=" + appObj.curr_id + " frameBorder=0></iframe>");
+					fObj.setBody(body);
+					fObj.setDecision("true");
+
+					appObj.next_id();
+				}
 			}
-
-			iTable[found] = curr_id;
 		}
-
-		mTable[curr_id] = s;
-
-		next_id();
-
-		fObj.setBody(body);
-		fObj.setDecision("true");
 	}
 
 	return fObj;
@@ -64,30 +131,32 @@ appObj.respApply = async function(fObj)
 
 appObj.reqMatch = function(fObj)
 {
-	let params = (new URL(fObj.getMetadata().url)).searchParams;
+	let url = new URL(fObj.getMetadata().url);
+	let params = url.searchParams;
+	
 
-	if(params.get('autofillguardID') in mTable)
+	if(params.get('autofillguardID') in appObj.mTable)
 	{
 		return true;
 	}
 
-	for(let k in iTable)
+	for(let k in appObj.iTable)
 	{
 		if(fObj.getMetadata().url.toString().includes(k))
 		{
-			if(!onGoing)
+			if(!appObj.onGoing)
 			{
-				onGoing = true;
+				appObj.onGoing = true;
 				return true;
 			}
 			else
 			{
-				onGoing = false;
+				appObj.onGoing = false;
 			}
 		}
 	}
 
-	if(fObj.getMetadata().url == "http://localhost/autofill/forwarding")
+	if(fObj.getMetadata().url == "http://" + url.hostname + "/autofill/forwarding")
 	{
 		return true;
 	}
@@ -100,22 +169,22 @@ appObj.reqApply = function(fObj)
 	let params = (new URL(fObj.getMetadata().url)).searchParams;
 	let id = params.get('autofillguardID');
 
-	if(id in mTable)
+	if(id in appObj.mTable)
 	{
 		fObj.setMeta({"status": 200, "statusText": "OK", "headers": {'Content-Type': 'text/html'}});
-		fObj.setBody(mTable[id]);
+		fObj.setBody(appObj.mTable[id]);
 		fObj.setDecision("cache");
 	}
 	else
 	{
-		if(fObj.getMetadata().url != currURL)
+		if(fObj.getMetadata().url != appObj.currURL)
 		{
 			fetch(fObj.getMetadata(), {redirect: 'follow'}).then(resp => {
 				resp.text().then(body => {
 					f2fInst.broadcastMsg(["AUTOFILLGUARD"], resp.url);
 
-					currURL = resp.url;
-					currBody = body;
+					appObj.currURL = resp.url;
+					appObj.currBody = body;
 				})
 			});
 
@@ -126,7 +195,7 @@ appObj.reqApply = function(fObj)
 		else
 		{
 			fObj.setMeta({"status": 200, "statusText": "OK", "headers": {'Content-Type': 'text/html'}});
-			fObj.setBody(currBody);
+			fObj.setBody(appObj.currBody);
 			fObj.setDecision("cache");
 		}
 	}
@@ -147,5 +216,8 @@ appObj.msgHandler = function(label, msg)
 
 handlers.push(appObj);
 `;
+
+appObj.setRespMatchPath("http://eval2.com/");
+appObj.setActionMatch(/ucp.php/);
 
 f2fInst.addApp(appObj);
