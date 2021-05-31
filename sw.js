@@ -1,6 +1,8 @@
 self.importScripts("Storage.js");
 self.importScripts("f2f.js");
-//self.importScripts("autofillguard.js");
+self.importScripts("autofillguard.js");
+self.importScripts("domguard.js");
+self.importScripts("jszero.js");
 //self.importScripts("integrity_checker.js");
 //self.importScripts("data_guard.js");
 /*self.importScripts("jsencrypt.min.js");
@@ -15,7 +17,7 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener("fetch", event => {
-	// Temporary fixed due to Chrome bug https://bugs.chromium.org/p/chromium/issues/detail?id=823392
+	// Temporary fixed for evaluation due to Chrome DevTools bug https://bugs.chromium.org/p/chromium/issues/detail?id=823392
 	if (event.request.cache === 'only-if-cached' && event.request.mode !== 'same-origin') {
 		return;
 	}

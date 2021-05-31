@@ -10,7 +10,14 @@ var newBack = function()
 	return;
 }
 
+var newGetBattery = function()
+{
+	// Can show a prompt like in JSZero. Here we simply deny.
+	return;
+}
+
 nativeEX.addWrap("window.performance", "now", newNow, false, false);
 nativeEX.addWrap("history", "back", newBack, false, false);
+nativeEX.addWrap("navigator", "getBattery", newGetBattery, false, false);
 
-fInit.addApp(nativeEX);
+f2fInst.addApp(nativeEX);

@@ -3,9 +3,9 @@ self.importScripts("he.js");
 
 let USE_HE = true;
 
-var appObj = new Object();
+var domguard = new Object();
 
-appObj.reqMatch = function(fObj)
+domguard.reqMatch = function(fObj)
 {
 	let url = new URL(fObj.getMetadata().url);
 
@@ -17,7 +17,7 @@ appObj.reqMatch = function(fObj)
 	return false;
 };
 
-appObj.reqApply = async function(fObj)
+domguard.reqApply = async function(fObj)
 {
 	let url = new URL(fObj.getMetadata().url);
 
@@ -33,4 +33,4 @@ appObj.reqApply = async function(fObj)
 	return fObj;
 };
 
-f2fInst.addApp(appObj);
+f2fInst.addApp(domguard);

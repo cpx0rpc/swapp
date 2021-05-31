@@ -1,38 +1,38 @@
-var appObj = new Object();
+var autofillguard = new Object();
 
-appObj.curr_id = 0;
-appObj.mTable = {};
-appObj.iTable = {};
-appObj.onGoing = false;
-appObj.currBody = "";
-appObj.currURL = "";
-appObj.respMatchPath = [];
-appObj.actionMatch = [];
+autofillguard.curr_id = 0;
+autofillguard.mTable = {};
+autofillguard.iTable = {};
+autofillguard.onGoing = false;
+autofillguard.currBody = "";
+autofillguard.currURL = "";
+autofillguard.respMatchPath = [];
+autofillguard.actionMatch = [];
 
-appObj.setRespMatchPath = function(m)
+autofillguard.setRespMatchPath = function(rmp)
 {
-	appObj.respMatchPath = m;
+	autofillguard.respMatchPath = rmp;
 }
 
-appObj.setActionMatch = function(m)
+autofillguard.setActionMatch = function(am)
 {
-	appObj.actionMatch = m;
+	autofillguard.actionMatch = am;
 }
 
-appObj.next_id = function()
+autofillguard.next_id = function()
 {
-	let int_id = parseInt(appObj.curr_id) + 1;
+	let int_id = parseInt(autofillguard.curr_id) + 1;
 
-	appObj.curr_id = int_id.toString();
+	autofillguard.curr_id = int_id.toString();
 }
 
-appObj.respMatch = function(fObj)
+autofillguard.respMatch = function(fObj)
 {
 	let urlString = fObj.getMetadata().url.toString();
 
-	if(appObj.respMatchPath.constructor === Array)
+	if(autofillguard.respMatchPath.constructor === Array)
 	{
-		for(p in appObj.respMatchPath)
+		for(p in autofillguard.respMatchPath)
 		{ 
 			if(p.constructor === RegExp && urlString.match(p))
 			{
@@ -44,22 +44,22 @@ appObj.respMatch = function(fObj)
 			}
 		}
 	}
-	else if(appObj.respMatchPath.constructor === RegExp)
+	else if(autofillguard.respMatchPath.constructor === RegExp)
 	{
-		if(urlString.match(appObj.respMatchPath))
+		if(urlString.match(autofillguard.respMatchPath))
 		{
 			return true;
 		}
 	}
-	else if(appObj.respMatchPath.constructor === String)
+	else if(autofillguard.respMatchPath.constructor === String)
 	{
-		return urlString == appObj.respMatchPath;
+		return urlString == autofillguard.respMatchPath;
 	}
 
 	return false;
 }
 
-appObj.respApply = async function(fObj)
+autofillguard.respApply = async function(fObj)
 {
 	let body = fObj.getBody();
 	let url = new URL(fObj.getMetadata().url);
@@ -90,9 +90,9 @@ appObj.respApply = async function(fObj)
 
 				let matched = false;
 
-				if(appObj.actionMatch.constructor === Array)
+				if(autofillguard.actionMatch.constructor === Array)
 				{
-					for(a in appObj.actionMatch)
+					for(a in autofillguard.actionMatch)
 					{ 
 						if(found.match(a))
 						{
@@ -100,11 +100,11 @@ appObj.respApply = async function(fObj)
 						}
 					}
 				}
-				else if(appObj.actionMatch.constructor === RegExp)
+				else if(autofillguard.actionMatch.constructor === RegExp)
 				{
-					matched = found.match(appObj.actionMatch);
+					matched = found.match(autofillguard.actionMatch);
 				}
-				else if(appObj.actionMatch.constructor === String && appObj.actionMatch == found)
+				else if(autofillguard.actionMatch.constructor === String && autofillguard.actionMatch == found)
 				{
 					matched = true;
 				}
@@ -113,14 +113,14 @@ appObj.respApply = async function(fObj)
 				{
 					u = new URL(found, url.origin);
 				
-					appObj.iTable[u.pathname] = appObj.curr_id;
-					appObj.mTable[appObj.curr_id] = s;
+					autofillguard.iTable[u.pathname] = autofillguard.curr_id;
+					autofillguard.mTable[autofillguard.curr_id] = s;
 
-					body = body.replace(form_match_exp, "<iframe src=http://" + url.hostname + "?autofillguardID=" + appObj.curr_id + " frameBorder=0></iframe>");
+					body = body.replace(form_match_exp, "<iframe src=http://" + url.hostname + "?autofillguardID=" + autofillguard.curr_id + " frameBorder=0></iframe>");
 					fObj.setBody(body);
 					fObj.setDecision("true");
 
-					appObj.next_id();
+					autofillguard.next_id();
 				}
 			}
 		}
@@ -129,29 +129,29 @@ appObj.respApply = async function(fObj)
 	return fObj;
 }
 
-appObj.reqMatch = function(fObj)
+autofillguard.reqMatch = function(fObj)
 {
 	let url = new URL(fObj.getMetadata().url);
 	let params = url.searchParams;
-	
+	let gID = params.get('autofillguardID');
 
-	if(params.get('autofillguardID') in appObj.mTable)
+	if(gID && gID in autofillguard.mTable)
 	{
 		return true;
 	}
 
-	for(let k in appObj.iTable)
+	for(let k in autofillguard.iTable)
 	{
 		if(fObj.getMetadata().url.toString().includes(k))
 		{
-			if(!appObj.onGoing)
+			if(!autofillguard.onGoing)
 			{
-				appObj.onGoing = true;
+				autofillguard.onGoing = true;
 				return true;
 			}
 			else
 			{
-				appObj.onGoing = false;
+				autofillguard.onGoing = false;
 			}
 		}
 	}
@@ -164,27 +164,27 @@ appObj.reqMatch = function(fObj)
 	return false;
 }
 
-appObj.reqApply = function(fObj)
+autofillguard.reqApply = function(fObj)
 {
 	let params = (new URL(fObj.getMetadata().url)).searchParams;
 	let id = params.get('autofillguardID');
 
-	if(id in appObj.mTable)
+	if(id in autofillguard.mTable)
 	{
 		fObj.setMeta({"status": 200, "statusText": "OK", "headers": {'Content-Type': 'text/html'}});
-		fObj.setBody(appObj.mTable[id]);
+		fObj.setBody(autofillguard.mTable[id]);
 		fObj.setDecision("cache");
 	}
 	else
 	{
-		if(fObj.getMetadata().url != appObj.currURL)
+		if(fObj.getMetadata().url != autofillguard.currURL)
 		{
 			fetch(fObj.getMetadata(), {redirect: 'follow'}).then(resp => {
 				resp.text().then(body => {
 					f2fInst.broadcastMsg(["AUTOFILLGUARD"], resp.url);
 
-					appObj.currURL = resp.url;
-					appObj.currBody = body;
+					autofillguard.currURL = resp.url;
+					autofillguard.currBody = body;
 				})
 			});
 
@@ -195,7 +195,7 @@ appObj.reqApply = function(fObj)
 		else
 		{
 			fObj.setMeta({"status": 200, "statusText": "OK", "headers": {'Content-Type': 'text/html'}});
-			fObj.setBody(appObj.currBody);
+			fObj.setBody(autofillguard.currBody);
 			fObj.setDecision("cache");
 		}
 	}
@@ -203,21 +203,21 @@ appObj.reqApply = function(fObj)
 	return fObj;
 }
 
-appObj.tcbMatch = true;
+autofillguard.tcbMatch = true;
 
-appObj.tcbApply = `
-var appObj = new Object();
+autofillguard.tcbApply = `
+var autofillguard = new Object();
 
-appObj.msgLabel = ["AUTOFILLGUARD"];
-appObj.msgHandler = function(label, msg)
+autofillguard.msgLabel = ["AUTOFILLGUARD"];
+autofillguard.msgHandler = function(label, msg)
 {
 	window.location.href = msg;
 };
 
-handlers.push(appObj);
+handlers.push(autofillguard);
 `;
 
-appObj.setRespMatchPath("http://eval2.com/");
-appObj.setActionMatch(/ucp.php/);
+autofillguard.setRespMatchPath("http://eval2.com/");
+autofillguard.setActionMatch(/ucp.php/);
 
-f2fInst.addApp(appObj);
+f2fInst.addApp(autofillguard);
