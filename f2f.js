@@ -231,7 +231,7 @@ function f2f()
     };
 
     // Internal function to handle requests
-    function processRequest(req)
+    function async processRequest(req)
     {
         let appCount = reqOrder.length;
         let fObject = new fProto();
