@@ -77,6 +77,8 @@ function f2f()
     let secret = makeid(128);
     let msgChannel = [];
 
+		let totalAppTime = 0;
+
     // Internal state variables
     this.storage= new Storage();
 
@@ -247,10 +249,16 @@ function f2f()
 
             if(app.hasOwnProperty("reqMatch"))
             {
+								//let b = performance.now();
+
                 if(app.reqMatch(fObject))
                 {
                     fObject = app.reqApply(fObject);
                 }
+
+								//let a = performance.now();
+								//totalAppTime += a-b;
+								//console.log("totalAppTime: ", totalAppTime);
             }
         }
 
@@ -280,11 +288,16 @@ function f2f()
 
                 if(app.hasOwnProperty("tcbMatch"))
                 {
+										//let b = performance.now();
                     if(app.tcbMatch)
                     {
                         // Inject app code into the TCB
                         fObject.setBody(writeBeforeMatchInternal(fObject.getBody(), app.tcbApply, "//__EOF__"));
                     }
+
+										//let a = performance.now();
+										//totalAppTime += a-b;
+										//console.log("totalAppTime: ", totalAppTime);
                 }
             }
 
@@ -303,13 +316,20 @@ function f2f()
 
                 if(app.hasOwnProperty("respMatch"))
                 {
+										//let b = performance.now();
+
                     if(app.respMatch(fObject))
                     {
-                        app.respApply(fObject).then(
+												fObject = await app.respApply(fObject);
+                        /*app.respApply(fObject).then(
                                                     function(result){
                                                         fObject = result;
-                                                    });
+                                                    });*/
                     }
+
+										//let a = performance.now();
+										//totalAppTime += a-b;
+										//console.log("totalAppTime: ", totalAppTime);
                 }
             }
 						
@@ -343,7 +363,10 @@ function f2f()
         else if(fObject.getDecision() == "cache")
         {
             let r = new Response(fObject.getBody(), fObject.getMetadata());
-            return r;
+						Object.defineProperty(r, "type", { value: fObject.getMetadata().type });
+						Object.defineProperty(r, "url", { value: fObject.getMetadata().url });
+						
+						return handleResponse(r);
         }
         else if(fObject.getDecision() == "deny")
         {
@@ -410,7 +433,11 @@ function f2f()
 
                 if(matchedLabel.length > 0)
                 {
+										//let b = performance.now();
                     app.msgHandler(matchedLabel, msg); 
+										//let a = performance.now();
+										//totalAppTime += a-b;
+										//console.log("totalAppTime: ", totalAppTime);
                 }
             }
         }
