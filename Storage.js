@@ -3,7 +3,7 @@
 //
 function Storage() {
     this.ready = new Promise((resolve, reject) => {
-        var request = indexedDB.open('F2F_PRIVATE');
+        var request = indexedDB.open('SWAPP_PRIVATE');
 
         request.onupgradeneeded = e => {
             this.db = e.target.result;
@@ -41,7 +41,7 @@ Storage.prototype.createTable = function(name, key, columns){
             obj.db.close();
 
             obj.ready = new Promise((resolve, reject) => {
-                var request = indexedDB.open('F2F_PRIVATE', current_version + 1);
+                var request = indexedDB.open('SWAPP_PRIVATE', current_version + 1);
                 request.onupgradeneeded = e => {
                     obj.db = e.target.result;
                     var store = obj.db.createObjectStore(name, {

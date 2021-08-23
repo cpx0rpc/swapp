@@ -8,7 +8,7 @@ var appObj = new Object();
 var request;
 
 function dg_init(){
-    f2fInst.storage.createTable("data_guard", "entry", ['value']);
+    swappInst.storage.createTable("data_guard", "entry", ['value']);
 }
 
 appObj.respMatch = function(fObject){
@@ -16,7 +16,7 @@ appObj.respMatch = function(fObject){
 }
 
 appObj.respApply = async function(fObject){
-    var transaction = f2fInst.storage.db.transaction('data_guard', 'readwrite');
+    var transaction = swappInst.storage.db.transaction('data_guard', 'readwrite');
     var store = transaction.objectStore('data_guard');
 
     var new_cookies = fObject.getMetadata().headers.get("Set-Cookie");
@@ -46,7 +46,7 @@ appObj.reqMatch = function(fObject){
 }
 
 appObj.reqApply = function(fObject){
-    var transaction = f2fInst.storage.db.transaction('data_guard', 'readwrite');
+    var transaction = swappInst.storage.db.transaction('data_guard', 'readwrite');
     var store = transaction.objectStore('data_guard');
 
     var req = store.get("Cookies");
@@ -59,6 +59,6 @@ appObj.reqApply = function(fObject){
 dg_init();
 
 setTimeout(function () {
-    f2fInst.addApp(appObj);
+    swappInst.addApp(appObj);
 }, 500)
 

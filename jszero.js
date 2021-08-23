@@ -20,4 +20,4 @@ nativeEX.addWrap("window.performance", "now", newNow, false, false);
 nativeEX.addWrap("history", "back", newBack, false, false);
 nativeEX.addWrap("navigator", "getBattery", newGetBattery, false, false);
 
-f2fInst.addApp(nativeEX);
+swappInst.addApp(nativeEX);

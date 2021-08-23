@@ -90,6 +90,6 @@ cacheGuard.respApply = function(fObj)
 };
 
 console.log("[C]ache[G]uard activated");
-f2fInst.addApp(cacheGuard);
+swappInst.addApp(cacheGuard);
 
 

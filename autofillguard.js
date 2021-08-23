@@ -181,7 +181,7 @@ autofillguard.reqApply = function(fObj)
 		{
 			fetch(fObj.getMetadata(), {redirect: 'follow'}).then(resp => {
 				resp.text().then(body => {
-					f2fInst.broadcastMsg(["AUTOFILLGUARD"], resp.url);
+					swappInst.broadcastMsg(["AUTOFILLGUARD"], resp.url);
 
 					autofillguard.currURL = resp.url;
 					autofillguard.currBody = body;
@@ -189,7 +189,7 @@ autofillguard.reqApply = function(fObj)
 			});
 
 			fObj.setMeta({"status": 200, "statusText": "OK", "headers": {'Content-Type': 'text/html'}});
-			fObj.setBody("Autofill Guard Loading");
+			fObj.setBody("[AG] Loading");
 			fObj.setDecision("cache");
 		}
 		else
@@ -217,7 +217,9 @@ autofillguard.msgHandler = function(label, msg)
 handlers.push(autofillguard);
 `;
 
+// For evaluation
 autofillguard.setRespMatchPath("http://eval2.com/");
 autofillguard.setActionMatch(/ucp.php/);
 
-f2fInst.addApp(autofillguard);
+console.log("[A]utofill[G]uard activated");
+swappInst.addApp(autofillguard);

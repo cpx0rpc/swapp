@@ -7,8 +7,6 @@ wbApp.reqMatch = function(fObj)
 
 self.importScripts("workbox-sw.js");
 
-
-console.log("[W]orkbox[A]pp activated");
-f2fInst.addApp(wbApp);
+swappInst.addApp(wbApp);
 
 

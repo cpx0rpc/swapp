@@ -1,7 +1,13 @@
-(function(){
-	//Disable Service Worker registration
+/*
+This file is injected into every web page to first establish the Trusted Code Block environment.
+The list of functions that need to be frozen is not finished and will be updated as needed. 
+(i.e., the console.log should be removed as well for release.)
+*/
 
-	/*var swRegister = navigator.serviceWorker.register.bind(navigator.serviceWorker);
+(function(){
+	// Disable Service Worker (un)registration APIs to prevent malicious script from removing SWAPP.
+
+	var swRegister = navigator.serviceWorker.register.bind(navigator.serviceWorker);
 	var inst_swRegister = function(path, option)
 		{
 			console.log("Service worker registration disallowed");
@@ -14,33 +20,42 @@
 			configurable: false,
 			writable: false
 		});
-*/
 
-	var swUnregister = ServiceWorkerRegistration.prototype.unregister.bind(ServiceWorkerRegistration.prototype);
+  var swUnregister = ServiceWorkerRegistration.prototype.unregister.bind(ServiceWorkerRegistration.prototype);
 	var inst_swUnregister = function()
 		{
 			console.log("Service worker unregistration disallowed");
 			return undefined;
 		};
 
-	Object.defineProperty(ServiceWorkerRegistration.prototype, "unregister",
+  Object.defineProperty(ServiceWorkerRegistration.prototype, "unregister",
 		{		
 			value: inst_swUnregister,
 			configurable: false,
 			writable: false
 		});
 
-	//Enhance IDB
+
+  // Freeze APIs used for verifying the integrity of native functions, checkIntegrity().
+
+  Object.freeze(document.createElement);
+  Object.freeze(document.body.appendChild);
+  Object.freeze(document.body.removeChild);
+  Object.freeze(HTMLElement.contentWindow);
+ 
+
+	// Allocate an indexedDB entry for exclusive usage inside SWAPP. Internal usage utilizes idb_open() instead.
+
 	var idb_open = indexedDB.open.bind(indexedDB);
 
 	var inst_idbopen = function(name, version){
-		if(name != "F2F_PRIVATE")
+		if(name != "SWAPP_PRIVATE")
 		{
 			return idb_open.apply(window, arguments);
 		}
 		else
 		{
-			return new Error("Access not allowed");
+			return new Error("Access not allowed outside SWAPP");
 		}
 	};
 
@@ -50,17 +65,18 @@
 		writable: false
 	});
 
+  
+  // Some helper functions mostly for checkIntegrity().
+
 	function intersect(a, b) {
 		var setB = new Set(b);
 		return [...new Set(a)].filter(x => setB.has(x));
 	}
 
-  let sList = [];
-  let defaultSig = ["74a59f5d24df2eb823764323e4db574e"];
-
   //  A formatted version of a popular md5 implementation.
   //  Original copyright (c) Paul Johnston & Greg Holt.
   //  The function itself is now 42 lines long.
+  //  Use for generating MD5 of a function definition
 
   function md5(inputString) {
       var hc="0123456789abcdef";
@@ -105,6 +121,15 @@
       return rh(a)+rh(b)+rh(c)+rh(d);
   }
 
+
+  // Integrity checker for native function calls inside SWAPP. Use to prevent run-time code overriding. 
+  // Example: console.log is used inside SWAPP and attackers override console.log to execute malicious code. 
+  // This function ensures the native calls specified through addFnc() are not tampered before the execution. 
+  // Output return a boolean and the invalid signature in case the result is false.
+
+  let sList = []; // MD5 Signature list
+  let defaultSig = ["74a59f5d24df2eb823764323e4db574e"]; // A default MD5 signature of native function without tampering.
+
   function checkIntegrity() {
     let i = document.createElement('iframe');
     let ret = {};
@@ -113,7 +138,6 @@
     
     for(s of sList)
     {
-      console.log("fname: ", s.fname);
       let fDefinition = i.contentWindow.Function.prototype.toString.call(eval(s.fname));
       let fSig = md5(fDefinition.match(/{.*?}/)[0]);
 
@@ -133,7 +157,11 @@
     return ret;
   }
 
-  // ["f1", {"fname": "f1", "sig": ["sig1", "sig2"]}, "f3"]
+
+  // A function to add a list of native functions that SWAPP needs to check their integrity before execution.
+  // Input includes function names and allowed function signature.
+  // Example input: ["f1", {"fname": "f1", "sig": ["sig1", "sig2"]}, "f3"]
+
   function addFnc(lst)
   {
     for(l of lst)
@@ -153,7 +181,13 @@
     }
   }
 
-	//Init message channel
+
+	// Init secure message channel. This is to prevent attacker impersonation. 
+  // Originally, the SW allows multiple "message" event handlers and broadcast to all document context, but we want to avoid this behavior. Lessons learned from The postman rings twice and the NDSS 2020 follow up work.
+  // Letting apps take care of messages through their own handler means they have to validate the impersonation and intended recipients, which app writers may not follow the best practices.
+  // Therefore, we instantiate a dedicated Message Channel that SWAPP uses for main communication. This channel is not open to external code outside TCB, and we randomize a token as well just in case attackers can bypass this channel. 
+  // As long as the Closure works as intended (i.e., preventing accesses from the external) this will ensure the security of the message channel.
+
 	var msgChannel = new MessageChannel();
 	//__SECRET__
 	var handlers = [];
@@ -184,11 +218,16 @@
 		}
 	};	
 
+
+  // A function to send postMessage.
+
 	function sendMsg(label, msg)
 	{
 		navigator.serviceWorker.controller.postMessage({"label": label, "msg": msg, "secret": secret});
 	}
 
+  
+  // Notify SWAPP's SW to know the dedicate port.
 	navigator.serviceWorker.controller.postMessage({"label": ["SWAPP_INIT"], "msg": "", "secret": secret}, [msgChannel.port2]);
 
 	//__EOF__
