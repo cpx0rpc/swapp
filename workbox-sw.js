@@ -107,10 +107,17 @@ define("./workbox-sw.js", [], (function() {
                     event: e
               });
 
-							let b = await s.text();
-							fObj.setMeta(s);
-							fObj.setBody(b);
-							fObj.setDecision("cache");
+              if(s)
+              {
+							  let b = await s.text();
+							  fObj.setMeta(s);
+							  fObj.setBody(b);
+							  fObj.setDecision("cache");
+              }
+              else
+              {
+                fObj.setDecision("true");
+              }
 
 							return fObj;
 						}

@@ -19,9 +19,14 @@ self.importScripts("integrity_checker.js");
 self.importScripts("data_guard.js");
 */
 
+self.importScripts("workboxapp.js");
+self.importScripts("cacheguard.js");
+
 self.addEventListener('activate', event => {
   // Don't need this here, but convenient for testing.
 	event.waitUntil(clients.claim());
+
+  swappInst.handleActivate();
 });
 
 self.addEventListener("fetch", event => {

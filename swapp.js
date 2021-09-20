@@ -4,9 +4,9 @@ Contain the metadata (i.e., HTTP headers) and content (HTTP body).
 The decision can be set so that the framework can reject a request/response.
 The execution and priority orders are specified later when adding apps using oProp/mProp.
 */
-function fProto()
+function fProto(initdecision)
 {
-    let decision = "true";
+    let decision = initdecision || "true";
     let metadata = {};
     let body = "";
     let headers = {};
@@ -186,6 +186,23 @@ function swapp()
         return false;
     }
 
+    // External helper function to check if a response is a web page. 
+    this.isWebpage = function(contentType)
+    {
+        // This list is temporary. Will be improved upon release for more robust detection
+        let list = ["application/x-httpd-php", "text/html"]; 
+
+        for(let i=0; i<list.length; i++)
+        {
+            if(contentType.includes(list[i]))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     // Internal function to check if a request is for the trusted code block script, so we can skip processing it.
     function isTCB(reqURL)
     {
@@ -257,7 +274,7 @@ function swapp()
 
                 if(app.reqMatch(fObject))
                 {
-                    fObject = app.reqApply(fObject);
+                    fObject = await app.reqApply(fObject);
                 }
 
                 // For evaluation
@@ -271,10 +288,10 @@ function swapp()
     }
 
     // Internal function to handle responses
-    async function processResponse(resp, body)
+    async function processResponse(resp, body, decision)
     {
         let appCount = tcbOrder.length;
-        let fObject = new fProto();
+        let fObject = new fProto(decision);
 
         fObject.setMeta(resp);
         fObject.setBody(body);
@@ -355,7 +372,7 @@ function swapp()
         // Proceed to fetch and modify the response accordingly
         if(fObject.getDecision() == "true")
         {
-            return fetch(req).then((resp) => handleResponse(resp));
+            return fetch(req).then((resp) => handleResponse(resp, "true"));
         }
         else if(fObject.getDecision() == "cache")
         {
@@ -363,7 +380,7 @@ function swapp()
 						Object.defineProperty(r, "type", { value: fObject.getMetadata().type });
 						Object.defineProperty(r, "url", { value: fObject.getMetadata().url });
 						
-						return handleResponse(r);
+						return handleResponse(r, "cache");
         }
         else if(fObject.getDecision() == "deny")
         {
@@ -376,7 +393,7 @@ function swapp()
     }
 
     // Internal function to handle responses
-    async function handleResponse(resp)
+    async function handleResponse(resp, decision)
     {
 				// If the response is invalid to reconstruct, then return the original without processing.
 				if(resp.type == "opaqueredirect" || resp.type == "error" || resp.type == "opaque")
@@ -395,10 +412,25 @@ function swapp()
 					return resp;
 				}
 				
-        let fObject = await resp.text().then((body) => processResponse(resp, body));
+        let fObject = await resp.text().then((body) => processResponse(resp, body, decision));
 				let ret = new Response(fObject.getBody(), fObject.getMetadata());
 				
         return ret;
+    }
+
+    // External function to handle activate event
+    this.handleActivate = function()
+    {
+      appCount = apps.length;
+      for(let i=0; i<appCount; i++)
+      {
+          let app = apps[i];
+
+          if(app.hasOwnProperty("onswactivate"))
+          {
+							app.onswactivate();
+          }
+      }
     }
 
     // External function to handle and dispatch postMessage
