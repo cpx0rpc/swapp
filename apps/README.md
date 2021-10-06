@@ -9,6 +9,8 @@ First, Cache Guard follows Karami's suggestion to check the Referer HTTP header.
 
 Second, Cache Guard additionally delays certain request based on heuristics to deter the attackers from being able to correctly guess the load time. If a request is a web page, Cache Guard injects a dummy request that will not affect the normal usage but will increase the load time measured by the *performance* API. If a request is a non-web-page resource, then Cache Guard checks whether the resource is legitimately requested. Cache Guard builds resource mappings for each web page. When a resource is requested but there is no existing mapping, Cache Guard will delay the request and add it to the mapping. This way, padding random parameters to trigger cache miss will no longer work, while the normal usage will not suffer from the delay.
 
+The amount of delay is taken from the average page load time of the previous visits. The statistic will be cleared every one in a while in case users are using different networks. 
+
 ### Available Configurations
 
 | API               | Description |
