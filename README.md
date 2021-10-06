@@ -79,6 +79,7 @@ For further details such as app configurations, please see [Apps.](https://githu
 | -----------       | --------- | ----------- |
 | Autofill Guard    | Under Dev | An application to help isolate auto-filled forms from being read by malicious scripts injected through XSS. |
 | Cache Guard       | Finished | An application to mitigate side-channel timing attack as discussed by [Karami et al.](https://www.ndss-symposium.org/ndss-paper/awakening-the-webs-sleeper-agents-misusing-service-workers-for-privacy-leakage/) |
+| Workbox-App       | Finished | An encapsulated Workbox library as a SWAPP app. Note that the actual Workbox file and configuration will still need to be generated as usual with a few lines of code editing. This app is more or less the wrapper. |
 | CSP               | Under Dev | Text |
 | Data Guard        | Under Dev | Text | 
 | Dom Guard         | Under Dev | A simple skeleton code to implement SW-based XSS defenses such as XSS filtering. |
