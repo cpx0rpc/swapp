@@ -46,11 +46,11 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener("fetch", event => {
-	event.respondWith(swappInst.handleRequest(event.request));
+  event.respondWith(swappInst.handleRequest(event.request));
 });
 
 self.addEventListener("message", event => {
-	swappInst.handleMessage(event);
+  swappInst.handleMessage(event);
 });
 ```
 
@@ -73,16 +73,17 @@ self.importScripts("cacheguard.js");
 5. Configure the apps accordingly (i.e., changing apps execution order or internal parameters) by editing the app files inside the *apps* folder. Read each app's [description](https://github.com/cpx0rpc/swapp/tree/main/apps) for more info.
 
 ## Applications
+For further details such as app configurations, please see [Apps.](https://github.com/cpx0rpc/swapp/tree/main/apps)
 
 | Name              | Status    | Description |
 | -----------       | --------- | ----------- |
-| Autofill Guard    | Under Dev | Text |
-| Cache Guard       | Under Dev | Text |
+| Autofill Guard    | Under Dev | An application to help isolate auto-filled forms from being read by malicious scripts injected through XSS. |
+| Cache Guard       | Finished | An application to mitigate side-channel timing attack as discussed by [Karami et al.](https://www.ndss-symposium.org/ndss-paper/awakening-the-webs-sleeper-agents-misusing-service-workers-for-privacy-leakage/) |
 | CSP               | Under Dev | Text |
-| Data Guard        | Under Dev | Text |
-| Dom Guard         | Under Dev | Text |
+| Data Guard        | Under Dev | Text | 
+| Dom Guard         | Under Dev | A simple skeleton code to implement SW-based XSS defenses such as XSS filtering. |
 | Integrity Checker | Under Dev | Text |
-| JSZero            | Under Dev | Text |
-| NativeEX          | Under Dev | Text |
+| JSZero            | Under Dev | An application to mitigate side-channel attack discussed by [Schwarz et al.](https://www.ndss-symposium.org/wp-content/uploads/2018/02/ndss2018_07A-3_Schwarz_paper.pdf) This app implements a mini version of the proposed defense as a SWAPP app. |
+| NativeEX          | Finished | A helper app to modify native APIs in the document context. |
 | ReDoS Defense     | Under Dev | Text |
 | X-Frame-Options   | Under Dev | Text |
