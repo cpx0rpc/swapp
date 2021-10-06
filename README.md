@@ -1,4 +1,4 @@
-# SWAPP (*S*ervice *W*orker *Ap*plication *P*latform)
+# SWAPP (*S*ervice *W*orker *AP*plication *P*latform)
 
 SWAPP is a centralized platform for both web developers and researchers to implement SW-based applications. 
 
