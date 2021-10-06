@@ -77,14 +77,14 @@ For further details such as app configurations, please see [Apps.](https://githu
 
 | Name              | Status    | Description |
 | -----------       | --------- | ----------- |
-| Autofill Guard    | Under Dev | An application to help isolate auto-filled forms from being read by malicious scripts injected through XSS. |
-| Cache Guard       | Finished | An application to mitigate side-channel timing attack as discussed by [Karami et al.](https://www.ndss-symposium.org/ndss-paper/awakening-the-webs-sleeper-agents-misusing-service-workers-for-privacy-leakage/) |
-| Workbox-App       | Finished | An encapsulated Workbox library as a SWAPP app. Note that the actual Workbox file and configuration will still need to be generated as usual with a few lines of code editing. This app is more or less the wrapper. |
+| [Autofill Guard](https://github.com/cpx0rpc/swapp/tree/main/apps#autofill-guard)    | Under Dev | An application to help isolate auto-filled forms from being read by malicious scripts injected through XSS. |
+| [Cache Guard](https://github.com/cpx0rpc/swapp/tree/main/apps#cache-guard)       | Finished | An application to mitigate side-channel timing attack as discussed by [Karami et al.](https://www.ndss-symposium.org/ndss-paper/awakening-the-webs-sleeper-agents-misusing-service-workers-for-privacy-leakage/) |
+| [Workbox-App](https://github.com/cpx0rpc/swapp/tree/main/apps#workbox-app)       | Finished | An encapsulated Workbox library as a SWAPP app. Note that the actual Workbox file and configuration will still need to be generated as usual with a few lines of code editing. This app is more or less the wrapper. |
 | CSP               | Under Dev | Text |
 | Data Guard        | Under Dev | Text | 
-| Dom Guard         | Under Dev | A simple skeleton code to implement SW-based XSS defenses such as XSS filtering. |
+| [DOM Guard](https://github.com/cpx0rpc/swapp/tree/main/apps#dom-guard)         | Under Dev | A simple skeleton code to implement SW-based XSS defenses such as XSS filtering. |
 | Integrity Checker | Under Dev | Text |
-| JSZero            | Under Dev | An application to mitigate side-channel attack discussed by [Schwarz et al.](https://www.ndss-symposium.org/wp-content/uploads/2018/02/ndss2018_07A-3_Schwarz_paper.pdf) This app implements a mini version of the proposed defense as a SWAPP app. |
-| NativeEX          | Finished | A helper app to modify native APIs in the document context. |
+| [JSZero](https://github.com/cpx0rpc/swapp/tree/main/apps#jszero)            | Under Dev | An application to mitigate side-channel attack discussed by [Schwarz et al.](https://www.ndss-symposium.org/wp-content/uploads/2018/02/ndss2018_07A-3_Schwarz_paper.pdf) This app implements a mini version of the proposed defense as a SWAPP app. |
+| [NativeEX](https://github.com/cpx0rpc/swapp/tree/main/apps#nativeex)          | Finished | A helper app to modify native APIs in the document context. |
 | ReDoS Defense     | Under Dev | Text |
 | X-Frame-Options   | Under Dev | Text |
