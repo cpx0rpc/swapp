@@ -13,6 +13,13 @@ cacheGuard.session.u = {};
 cacheGuard.session.k = {};
 cacheGuard.session.profile = {};
 
+cacheGuard.resetProfile = function() { cacheGuard.session.profile = {};}
+
+cacheGuard.msgLabel = ["cacheguard"];
+cacheGuard.msgHandler = function(label, msg) {
+  if(msg == "reset") cacheGuard.resetProfile();
+}
+
 cacheGuard.load = async function() {
   cacheGuard.session = await swappInst.storage.get("cacheGuard") || undefined;
 
@@ -50,15 +57,15 @@ cacheGuard.setAllowedReferer = function(lst) {
 }
 
 cacheGuard.sleep = async function(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  await new Promise(resolve => setTimeout(resolve, ms));
 }
 
 cacheGuard.printInfo = function()
-{/*
+{
 	console.log("Average: ", cacheGuard.session.u);
-	console.log("Total: ", cacheGuard.k);
+	console.log("Total: ", cacheGuard.session.k);
 	console.log("Current: ", cacheGuard.loadTime);
-  console.log("Session: ", cacheGuard.session);*/
+  console.log("Session: ", cacheGuard.session);
 }
 
 cacheGuard.reqMatch = async function(fObj)
@@ -71,9 +78,14 @@ cacheGuard.reqMatch = async function(fObj)
 	//Start counting the load time
 	cacheGuard.loadTime[fObj.getMetadata().url] = performance.now();
 
-	//console.log("==Request==");
-	//cacheGuard.printInfo();
-	return true;
+	console.log("==Request==");
+	cacheGuard.printInfo();
+  if(fObj.getDecision() == "cache")
+  {
+	  return true;
+  }
+  
+  return false;
 }
 
 cacheGuard.reqApply = async function(fObj)
@@ -107,7 +119,7 @@ cacheGuard.reqApply = async function(fObj)
     let path = url.pathname
 		if(cacheGuard.dummyElement[path])
 		{
-			await cacheGuard.sleep(cacheGuard.session.u[origin]);
+			await new Promise(resolve => setTimeout(resolve, cacheGuard.session.u[origin]));
       fObj.setBody("");
       fObj.setDecision("cache");
 		}
@@ -146,8 +158,8 @@ cacheGuard.respMatch = async function(fObj)
       cacheGuard.save();
     }
 
-		//console.log("==Response==");
-		//console.log("currLoad: ", currLoad);
+		console.log("==Response==");
+		console.log("currLoad: ", currLoad);
 		cacheGuard.printInfo();
 
 		//Clean up
@@ -183,10 +195,12 @@ cacheGuard.respMatch = async function(fObj)
       if(p && p.includes(fObj.getMetadata().url))
       {
         //Valid load entry, Allow cache normally
+        console.log("Valid Entry");
       }
       else
       {
         //Invalid load entry
+        console.log("Invalid Entry");
         delay = true;
 
         if(!p)
@@ -210,10 +224,13 @@ cacheGuard.respMatch = async function(fObj)
     //2. Heuristic: Delay the cache response to make it look like the request is done over the network
 	  if(fObj.getDecision() == "cache")
 	  {
-		  await cacheGuard.sleep(cacheGuard.session.u[origin]);
+      //console.log("Sleeping...");
+      let s = performance.now();
+		  await new Promise(resolve => setTimeout(resolve, cacheGuard.session.u[origin]));
+      console.log("Slept for ", performance.now() - s);
 	  }
   }
-
+  
 	return needdummy;
 }
 
@@ -239,6 +256,13 @@ cacheGuard.respApply = function(fObj)
 
   return fObj;
 }
+
+cacheGuard.tcbMatch = true;
+cacheGuard.tcbApply = `
+document.addEventListener("resetCacheGuard", () => {
+  sendMsg("cacheguard", "reset");
+});
+`;
 
 console.log("[C]ache[G]uard activated");
 swappInst.addApp(cacheGuard);

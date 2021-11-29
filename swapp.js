@@ -263,7 +263,7 @@ function swapp()
         fObject.setHeaders(req.headers);
 
         appCount = reqOrder.length;
-
+        
         for(let i=0; i<appCount; i++)
         {
             let app = apps[reqOrder[i].pos];
@@ -272,7 +272,7 @@ function swapp()
             {
 								//let b = performance.now();
 
-                if(app.reqMatch(fObject))
+                if(await app.reqMatch(fObject))
                 {
                     fObject = await app.reqApply(fObject);
                 }
@@ -335,7 +335,7 @@ function swapp()
                 {
 										//let b = performance.now();
 
-                    if(app.respMatch(fObject))
+                    if(await app.respMatch(fObject))
                     {
 												fObject = await app.respApply(fObject);
                     }
@@ -360,7 +360,7 @@ function swapp()
     // Internal function to inject the TCB into pages
     function initDocumentContext(fObject)
     {
-        return writeAfterMatchInternal(fObject.getBody(), "\n\t<script src=\"./tcb/init.js\"></script>", "<head>");
+        return writeAfterMatchInternal(fObject.getBody(), "\n\t<script src=\"/tcb/init.js\"></script>", "<head>");
     }
 
     // External function to handle requests
@@ -372,7 +372,10 @@ function swapp()
         // Proceed to fetch and modify the response accordingly
         if(fObject.getDecision() == "true")
         {
-            return fetch(req).then((resp) => handleResponse(resp, "true"));
+            let resp = await fetch(req);
+            return await handleResponse(resp, "true");
+
+            //return fetch(req).then((resp) => handleResponse(resp, "true"));
         }
         else if(fObject.getDecision() == "cache")
         {
@@ -380,7 +383,7 @@ function swapp()
 						Object.defineProperty(r, "type", { value: fObject.getMetadata().type });
 						Object.defineProperty(r, "url", { value: fObject.getMetadata().url });
 						
-						return handleResponse(r, "cache");
+						return await handleResponse(r, "cache");
         }
         else if(fObject.getDecision() == "deny")
         {
