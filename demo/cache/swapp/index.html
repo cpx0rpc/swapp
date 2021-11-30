@@ -1,0 +1,196 @@
+<html>
+<head>
+	<title> Test Cache Guard </title>
+</head>
+<body>
+	
+	<script>
+		navigator.serviceWorker.register("sw.js");
+
+    let resultBufferA = [];
+    let resultBufferB = [];
+
+    function makeid(length) 
+    {
+        var result           = [];
+        var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        var charactersLength = characters.length;
+        for ( var i = 0; i < length; i++ ) 
+        {
+            result.push(characters.charAt(Math.floor(Math.random() * charactersLength)));
+        }
+
+        return result.join('');
+    }
+
+    function addIframeA(url)
+    {
+      var iframe = document.createElement("iframe");
+      document.body.appendChild(iframe);
+
+      iframe.onload = function(event) {
+        let duration = performance.now() - start;
+
+        console.log(url, duration);
+        resultBufferA.push(duration);
+
+        iframe.remove();
+      }
+
+      var start = performance.now();
+      iframe.src = url;
+    }
+
+    function addIframeB(url)
+    {
+      var iframe = document.createElement("iframe");
+      document.body.appendChild(iframe);
+
+      iframe.onload = function(event) {
+        let duration = performance.now() - start;
+
+        console.log(url, duration);
+        resultBufferB.push(duration);
+
+        iframe.remove();
+      }
+
+      var start = performance.now();
+      iframe.src = url;
+    }
+
+    function startcache()
+    {
+      addIframeA("data.json");
+      addIframeB("data.json?" + makeid(10));
+    }
+
+    function startnocache()
+    {
+      addIframeA("datanocache.json");
+      addIframeB("datanocache.json?" + makeid(10));
+    }
+
+    function resetCacheGuard()
+    {
+      const startEvent = new Event("resetCacheGuard");
+      document.dispatchEvent(startEvent);
+    }
+
+    async function evaluateNoCache()
+    {
+      let totalA = 0;
+      let totalB = 0;
+      let n = parseInt(document.getElementById("n").value) || 100;
+
+      for(let i=0; i<n; i++)
+      {
+        console.log("Iteration ", i+1);
+        startnocache();
+        //resetCacheGuard();
+
+        await sleep(1500);
+      }
+
+      for(let i=0; i<n; i++)
+      {
+        totalA += resultBufferA[i];
+        totalB += resultBufferB[i];
+      }
+
+      console.log("Average No Params: ", totalA/n);
+      console.log("Average With Params: ", totalB/n);
+
+      resultBufferA = [];
+      resultBufferB = [];
+    }
+
+    async function evaluateCache()
+    {
+      let totalA = 0;
+      let totalB = 0;
+      let n = parseInt(document.getElementById("n").value) || 100;
+
+      for(let i=0; i<n; i++)
+      {
+        console.log("Iteration ", i+1);
+        startcache();
+        //resetCacheGuard();
+
+        await sleep(1500);
+      }
+
+      for(let i=0; i<n; i++)
+      {
+        totalA += resultBufferA[i];
+        totalB += resultBufferB[i];
+      }
+
+      console.log("Average No Params: ", totalA/n);
+      console.log("Average With Params: ", totalB/n);
+
+      resultBufferA = [];
+      resultBufferB = [];
+    }
+
+    async function evaluateCacheNoProfile()
+    {
+      let totalA = 0;
+      let totalB = 0;
+      let n = parseInt(document.getElementById("n").value) || 100;
+
+      for(let i=0; i<n; i++)
+      {
+        console.log("Iteration ", i+1);
+        startcache();
+        resetCacheGuard();
+
+        await sleep(1500);
+      }
+
+      for(let i=0; i<n; i++)
+      {
+        totalA += resultBufferA[i];
+        totalB += resultBufferB[i];
+      }
+
+      console.log("Average No Params: ", totalA/n);
+      console.log("Average With Params: ", totalB/n);
+
+      resultBufferA = [];
+      resultBufferB = [];
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+	</script>
+  <input type="text" id="n" value="5"></input>
+	<button onclick="evaluateNoCache()">Start No Cache</button>
+  <button onclick="evaluateCache()">Start Cache</button>
+  <button onclick="evaluateCacheNoProfile()">Start Cache No Profile</button>
+  <button onclick="resetCacheGuard()">Reset Profile</button>
+
+  <br><br>
+  <h3>Start No Cache:</h3> 
+  Start evaluating and calculate the load time of a resource with n iterations (n given in the text area). The resource is not cached and loaded through network only. <br><br>
+
+  <h3>Start Cache:</h3>
+  Start evaluating and calculate the load time of a resource with n iterations (n given in the text area). The resource is cached and loaded through cache. CacheGuard is activated and working normally. If the button is pressed within 30 seconds of the page load, CacheGuard will profile the resource to be valid for subsequent iterations. The first iteration should show the load time similar to network loadings despite it being loaded from cache. Subsequent loads should show lower load time. This configuration simulates a benign situation how a page's profile is built. After the first time, the cache should work normally.<br><br> 
+
+  <h3>Start Cache No Profile:</h3>
+  Start evaluating and calculate the load time of a resource with n iterations (n given in the text area). The resource is cached and loaded through cache. CacheGuard is activated but profiling is disabled. Therefore, all iterations will have a delay and should load similar to network loadings. This configuration simulates a malicious situation when a resource is loaded out of no where by attacker to measure the timing. <br><br> 
+
+  <h3>Step to test:</h3>
+  1. Open Chrome DevTools and remove all website's content in the Application>Storage>Clear Site Data. <br>
+  2. Go to the Network Tab and disable cache (this is HTTP cache, a different type of caching). Select the network condition to Fast 3G. <br>
+  3. Reload the page and check the console. Make sure "[C]ache[G]uard activated" is shown before reloading a second time. <br>
+  4. Click Start Cache No Profile to build the timing information for Cache Guard. <br>
+  5. Click Reset Profile, then Start Cache. You can select the number of iterations in the text area. <br>
+  <br><br>
+  Note that the very first test does not have any profile and no average delay is known by Cache Guard. Therefore, Cache Guard will delay for 0ms for the very first time. <br><br>
+
+   
+</body>
+</html>

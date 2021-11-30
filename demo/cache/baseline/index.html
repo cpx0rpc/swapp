@@ -1,0 +1,103 @@
+<html>
+<head>
+	<title> Test Cache Guard </title>
+</head>
+<body>
+	
+	<script>
+		navigator.serviceWorker.register("/sw.js");
+
+    function makeid(length) 
+    {
+        var result           = [];
+        var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        var charactersLength = characters.length;
+        for ( var i = 0; i < length; i++ ) 
+        {
+            result.push(characters.charAt(Math.floor(Math.random() * charactersLength)));
+        }
+
+        return result.join('');
+    }
+
+		async function genFetchCache()
+		{
+      let st = performance.now();
+			await fetch("data.json");
+			return performance.now() - st;
+		}
+
+    async function genFetchNoCache()
+		{
+      let st2 = performance.now();
+      await fetch("datanocache.json");
+      return performance.now() - st2;
+		}
+
+    async function genFetchNoCacheRandom()
+		{
+      let id = makeid(10);
+      let st2 = performance.now();
+      await fetch("datanocache.json?"+id);
+      return performance.now() - st2;
+		}
+
+    async function startTotal(r=false)
+    {
+      let n = 100;
+      let totalCache = 0;
+      let totalNoCache = 0;
+
+      for(let i=0; i<n; i++)
+      {
+        let cacheElapse = await genFetchCache();
+        totalCache += cacheElapse;
+
+        //console.log(cacheElapse);
+        startCache();
+
+        if(r)
+        {
+          totalNoCache += await genFetchNoCacheRandom();
+        }
+        else
+        {
+          totalNoCache += await genFetchNoCache();
+        }
+      }
+
+      console.log("Average Cache: ", totalCache/n);
+      console.log("Average NoCache: ", totalNoCache/n);
+      startCache();
+      startCache();
+      startCache();
+      startCache();
+      startCache();
+      startCache();
+      startCache();
+      startCache();
+      startCache();
+    }
+
+    async function startNoCache()
+    {
+      let elapse = await genFetchNoCache();
+      console.log(elapse);
+      return elapse;
+    }
+
+    async function startCache()
+    {
+      let elapse = await genFetchCache();
+      console.log(elapse);
+      return elapse;
+    }
+
+	</script>
+
+	<button onclick="startTotal()">Total</button>
+  <button onclick="startTotal(true)">Total Random</button>
+  <button onclick="startNoCache()">No Cache</button>
+  <button onclick="startCache()">Cache</button>
+</body>
+</html>
