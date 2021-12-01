@@ -23,16 +23,30 @@
         return result.join('');
     }
 
-    function addIframeA(url)
+    function addIframe(url, row, config)
     {
       var iframe = document.createElement("iframe");
+      iframe.style = "position: absolute;width:0;height:0;border:0;";
       document.body.appendChild(iframe);
 
       iframe.onload = function(event) {
         let duration = performance.now() - start;
+        duration = parseFloat(duration.toFixed(3));
 
         console.log(url, duration);
-        resultBufferA.push(duration);
+
+        if(config == "A")
+        {
+          resultBufferA.push(duration);
+          let cell = row.insertCell(1);
+          cell.innerHTML = duration;
+        }
+        else if(config == "B")
+        {
+          resultBufferB.push(duration);
+          let cell = row.insertCell(2);
+          cell.innerHTML = duration;
+        }
 
         iframe.remove();
       }
@@ -41,34 +55,10 @@
       iframe.src = url;
     }
 
-    function addIframeB(url)
+    function startCompare(row, filename)
     {
-      var iframe = document.createElement("iframe");
-      document.body.appendChild(iframe);
-
-      iframe.onload = function(event) {
-        let duration = performance.now() - start;
-
-        console.log(url, duration);
-        resultBufferB.push(duration);
-
-        iframe.remove();
-      }
-
-      var start = performance.now();
-      iframe.src = url;
-    }
-
-    function startcache()
-    {
-      addIframeA("data.json");
-      addIframeB("data.json?" + makeid(10));
-    }
-
-    function startnocache()
-    {
-      addIframeA("datanocache.json");
-      addIframeB("datanocache.json?" + makeid(10));
+      addIframe(filename, row, "A");
+      addIframe(filename + "?" + makeid(10), row, "B");
     }
 
     function resetCacheGuard()
@@ -77,83 +67,90 @@
       document.dispatchEvent(startEvent);
     }
 
-    async function evaluateNoCache()
+    function clearTable()
     {
-      let totalA = 0;
-      let totalB = 0;
-      let n = parseInt(document.getElementById("n").value) || 100;
-
-      for(let i=0; i<n; i++)
+      let t = document.getElementById("results");
+      let numrow = t.rows.length;
+      
+      for(let i=1; i<numrow; i++)
       {
-        console.log("Iteration ", i+1);
-        startnocache();
-        //resetCacheGuard();
-
-        await sleep(1500);
+        t.deleteRow(1);
       }
-
-      for(let i=0; i<n; i++)
-      {
-        totalA += resultBufferA[i];
-        totalB += resultBufferB[i];
-      }
-
-      console.log("Average No Params: ", totalA/n);
-      console.log("Average With Params: ", totalB/n);
-
-      resultBufferA = [];
-      resultBufferB = [];
     }
 
-    async function evaluateCache()
+    async function startMeasure(profiling, caching)
     {
+      clearTable();
+
       let totalA = 0;
       let totalB = 0;
       let n = parseInt(document.getElementById("n").value) || 100;
+      let d = parseInt(document.getElementById("d").value) || 1500;
+      let t = document.getElementById("results");
 
       for(let i=0; i<n; i++)
       {
+        var row = t.insertRow(i+1);
+        var c = row.insertCell(0);
+        c.innerHTML = i+1;
         console.log("Iteration ", i+1);
-        startcache();
-        //resetCacheGuard();
 
-        await sleep(1500);
+        if(caching)
+        {
+          startCompare(row, "data.json");
+        }
+        else
+        {
+          startCompare(row, "datanocache.json");
+        }
+
+        if(!profiling)
+        {
+          resetCacheGuard();
+        }
+
+        await sleep(d);
       }
 
       for(let i=0; i<n; i++)
       {
         totalA += resultBufferA[i];
         totalB += resultBufferB[i];
+
+        let c = t.rows[i+1].insertCell(3);
+        let diff = 100 - (resultBufferA[i]/resultBufferB[i])*100;
+        if(diff > 0)
+        {
+          c.innerHTML = "-" + diff.toFixed(3) + "%";
+        }
+        else
+        {
+          c.innerHTML = "+" + Math.abs(diff.toFixed(3)) + "%";
+        }
       }
 
-      console.log("Average No Params: ", totalA/n);
-      console.log("Average With Params: ", totalB/n);
+      let avgA = totalA/n;
+      avgA = avgA.toFixed(3);
+      let avgB = totalB/n;
+      avgB = avgB.toFixed(3);
 
-      resultBufferA = [];
-      resultBufferB = [];
-    }
-
-    async function evaluateCacheNoProfile()
-    {
-      let totalA = 0;
-      let totalB = 0;
-      let n = parseInt(document.getElementById("n").value) || 100;
-
-      for(let i=0; i<n; i++)
+      let r = t.insertRow(n+1);
+      let c0 = r.insertCell(0);
+      c0.innerHTML = "Average";
+      let c1 = r.insertCell(1);
+      c1.innerHTML = avgA;
+      let c2 = r.insertCell(2);
+      c2.innerHTML = avgB;
+      let c3 = r.insertCell(3);
+      let diff = 100 - (avgA/avgB)*100;
+      if(diff>0)
       {
-        console.log("Iteration ", i+1);
-        startcache();
-        resetCacheGuard();
-
-        await sleep(1500);
+        c3.innerHTML = "-" + diff.toFixed(3) + "%";
       }
-
-      for(let i=0; i<n; i++)
+      else
       {
-        totalA += resultBufferA[i];
-        totalB += resultBufferB[i];
+        c3.innerHTML = "+" + Math.abs(diff.toFixed(3)) + "%";
       }
-
       console.log("Average No Params: ", totalA/n);
       console.log("Average With Params: ", totalB/n);
 
@@ -166,15 +163,16 @@
     }
 
 	</script>
-  <input type="text" id="n" value="5"></input>
-	<button onclick="evaluateNoCache()">Start No Cache</button>
-  <button onclick="evaluateCache()">Start Cache</button>
-  <button onclick="evaluateCacheNoProfile()">Start Cache No Profile</button>
+  Number of iterations: <input type="text" id="n" value="5"></input> <br>
+  Time delay between iterations: <input type="text" id="d" value="1500"></input> <br>
+	<button onclick="startMeasure(true, false)">Start No Cache</button>
+  <button onclick="startMeasure(true, true)">Start Cache</button>
+  <button onclick="startMeasure(false, true)">Start Cache No Profile</button>
   <button onclick="resetCacheGuard()">Reset Profile</button>
 
   <br><br>
   <h3>Start No Cache:</h3> 
-  Start evaluating and calculate the load time of a resource with n iterations (n given in the text area). The resource is not cached and loaded through network only. <br><br>
+  Start evaluating and calculate the load time of a resource with n iterations (n given in the text area). The resource is not cached and loaded through network only. Can be used to learn the network delay for this demo. <br><br>
 
   <h3>Start Cache:</h3>
   Start evaluating and calculate the load time of a resource with n iterations (n given in the text area). The resource is cached and loaded through cache. CacheGuard is activated and working normally. If the button is pressed within 30 seconds of the page load, CacheGuard will profile the resource to be valid for subsequent iterations. The first iteration should show the load time similar to network loadings despite it being loaded from cache. Subsequent loads should show lower load time. This configuration simulates a benign situation how a page's profile is built. After the first time, the cache should work normally.<br><br> 
@@ -185,12 +183,20 @@
   <h3>Step to test:</h3>
   1. Open Chrome DevTools and remove all website's content in the Application>Storage>Clear Site Data. <br>
   2. Go to the Network Tab and disable cache (this is HTTP cache, a different type of caching). Select the network condition to Fast 3G. <br>
-  3. Reload the page and check the console. Make sure "[C]ache[G]uard activated" is shown before reloading a second time. <br>
-  4. Click Start Cache No Profile to build the timing information for Cache Guard. <br>
-  5. Click Reset Profile, then Start Cache. You can select the number of iterations in the text area. <br>
+  3. Reload the page and click on Start No Cache to learn about the website's average network delay. <br>
+  4. Next, try out other two options: Start Cache and Start Cache No Profile. (More details on what they do are elaborated above. <br>
+  5. See the result at the bottome of the page. You can select the number of iterations and delay timing in the text area. <br>
   <br><br>
   Note that the very first test does not have any profile and no average delay is known by Cache Guard. Therefore, Cache Guard will delay for 0ms for the very first time. <br><br>
 
-   
+  <h2>Results</h2> 
+  <table id="results">
+    <tr>
+      <th>Iteration |</th>
+      <th>No parameter (A) |</th>
+      <th>With parameter (B) |</th>
+      <th>A/B%</th>
+    </tr>
+  </table>
 </body>
 </html>

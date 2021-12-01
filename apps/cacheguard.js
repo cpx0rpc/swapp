@@ -67,6 +67,16 @@ cacheGuard.reqMatch = async function(fObj)
 	//Start counting the load time
 	cacheGuard.loadTime[fObj.getMetadata().url] = performance.now();
 
+  if(!cacheGuard.session.u[origin])
+  {
+    cacheGuard.session.u[origin] = 0;
+  }
+
+  if(!cacheGuard.session.k[origin])
+  {
+    cacheGuard.session.k[origin] = 0;
+  }
+
   if(fObj.getDecision() == "cache")
   {
 	  return true;
@@ -79,16 +89,6 @@ cacheGuard.reqApply = async function(fObj)
 {
   let url = new URL(fObj.getMetadata().url);
   let origin = url.origin;
-
-  if(!cacheGuard.session.u[origin])
-  {
-    cacheGuard.session.u[origin] = 0;
-  }
-
-  if(!cacheGuard.session.k[origin])
-  {
-    cacheGuard.session.k[origin] = 0;
-  }
 
 	//1. Heuristic: Block all 3rd party referrer
 	let r = fObj.getMetadata().referrer;
@@ -139,7 +139,7 @@ cacheGuard.respMatch = async function(fObj)
     if(fObj.getDecision() != "cache")
     {
 		  //Update the average
-		  cacheGuard.session.k[origin] += 1;
+		  cacheGuard.session.k[origin] = cacheGuard.session.k[origin] + 1;
       cacheGuard.session.u[origin] = cacheGuard.session.u[origin] + (currLoad - cacheGuard.session.u[origin])/cacheGuard.session.k[origin];
       cacheGuard.save();
     }
@@ -177,12 +177,10 @@ cacheGuard.respMatch = async function(fObj)
       if(p && p.includes(fObj.getMetadata().url))
       {
         //Valid load entry, Allow cache normally
-        console.log("Valid");
       }
       else
       {
         //Invalid load entry
-        console.log("Invalid");
         delay = true;
 
         if(!p)
