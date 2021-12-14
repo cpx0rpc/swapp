@@ -5,6 +5,107 @@ The list of functions that need to be frozen is not finished and will be updated
 */
 
 (function(){
+  // Set up IDB
+  // Utility functions (timing measurement) for evaluation only
+
+  function EStorage() {
+      this.ready = new Promise((resolve, reject) => {
+          var request = indexedDB.open('SWAPP_EVALUATION');
+
+          request.onupgradeneeded = e => {
+              this.db = e.target.result;
+              this.db.createObjectStore('store');
+          };
+
+          request.onsuccess = e => {
+              this.db = e.target.result;
+              resolve();
+          };
+
+          request.onerror = e => {
+              this.db = e.target.result;
+              reject(e);
+          };
+      });
+  }
+
+  EStorage.prototype.getAll = function() {
+      var obj = this;
+      return this.ready.then(() => {
+          return new Promise((resolve, reject) => {
+              var request = obj.getStore().getAll();
+              request.onsuccess = e => resolve(e.target.result);
+              request.onerror = reject;
+          });
+      });
+  };
+
+  EStorage.prototype.getStore = function() {
+      return this.db
+          .transaction(['store'], 'readwrite')
+          .objectStore('store');
+  };
+
+  EStorage.prototype.set = function(key, value) {
+      var obj = this;
+      return this.ready.then(() => {
+          return new Promise((resolve, reject) => {
+              var request = obj.getStore().put(value, key);
+              request.onsuccess = resolve;
+              request.onerror = reject;
+          });
+      });
+  };
+
+  EStorage.prototype.delete = function(key, value) {
+      indexedDB.deleteDatabase(location.origin);
+  };
+
+  let edb = new EStorage();
+
+  function createLabel(label)
+  {
+    // Save a time-label to the dedicated storage
+
+    let t = performance.now() + performance.timeOrigin;
+    edb.set(t, {"time": t, "label": label});
+  }
+
+  async function getLabels()
+  {
+    let labels = await edb.getAll();
+    let results = [];
+
+    for(let i=0; i<labels.length; i++)
+    {
+      let arr = labels[i].label.split(":", 3);
+      let g = parseInt(arr[1]);
+      
+      if(results[g])
+      {
+        results[g].push(labels[i]);
+
+      }
+      else
+      {
+        results[g] = [labels[i]];
+      }
+    }
+
+    for(let i=0; i<results.length; i++)
+    {
+      if(results[i] && results[i].length > 0)
+      {
+        for(let j=results[i].length-1; j>0; j--)
+        {
+          results[i][j]["time"] = results[i][j]["time"] - results[i][j-1]["time"];
+        }
+      }
+    }
+
+    console.log(results);
+  }
+
 	// Disable Service Worker (un)registration APIs to prevent malicious script from removing SWAPP.
 
 	var swRegister = navigator.serviceWorker.register.bind(navigator.serviceWorker);
@@ -39,8 +140,11 @@ The list of functions that need to be frozen is not finished and will be updated
   // Freeze APIs used for verifying the integrity of native functions, checkIntegrity().
 
   Object.freeze(document.createElement);
-  Object.freeze(document.body.appendChild);
-  Object.freeze(document.body.removeChild);
+  document.addEventListener("DOMContentLoaded", function(event) {
+    Object.freeze(document.body.appendChild);
+    Object.freeze(document.body.removeChild);
+  });
+  
   Object.freeze(HTMLElement.contentWindow);
  
 
@@ -234,4 +338,5 @@ The list of functions that need to be frozen is not finished and will be updated
 
 })();
 
+console.log("TCB Injected");
 

@@ -6,7 +6,6 @@
 self.importScripts("Storage.js");
 self.importScripts("swapp.js");
 
-
 // These scripts are for example apps
 
 /*
@@ -19,8 +18,8 @@ self.importScripts("integrity_checker.js");
 self.importScripts("data_guard.js");
 */
 
-self.importScripts("workboxapp.js");
-self.importScripts("cacheguard.js");
+self.importScripts("./apps/workboxapp.js");
+self.importScripts("./apps/cacheguard.js");
 
 self.addEventListener('activate', event => {
   // Don't need this here, but convenient for testing.
@@ -36,7 +35,9 @@ self.addEventListener("fetch", event => {
 		return;
 	}
 
+  //return fetch(event.request);//event.respondWith(fetch(event.request));
   // This is the start of SWAPP pipeline.
+  //event.respondWith(sleep(0, event.request));
 	event.respondWith(swappInst.handleRequest(event.request));
 });
 

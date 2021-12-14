@@ -6,11 +6,6 @@
 self.importScripts("Storage.js");
 self.importScripts("swapp.js");
 
-async function sleep(ms, r) {
-  await new Promise(resolve => setTimeout(resolve, ms));
-  return fetch(r);
-}
-
 // These scripts are for example apps
 
 /*

@@ -1,5 +1,7 @@
 var cacheGuard = new Object();
 
+cacheGuard.appname = "CACHEGUARD";
+
 cacheGuard.loaded = false;
 
 cacheGuard.dummyElement = {};

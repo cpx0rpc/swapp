@@ -79,6 +79,7 @@ function swapp()
     let msgChannel = [];  // List of dedicated message channels established
 
 		let totalAppTime = 0; // For evaluation
+    let currentFetchID = 0; // For evaluation
 
     // Internal state variables
     this.storage= new Storage();
@@ -162,6 +163,11 @@ function swapp()
     // External API for adding new SWAPP apps
     this.addApp = function(app)
     {
+        if(!app.appname)
+        {
+          app.appname = "App" + apps.length.toString();
+        }
+
         apps.push(app);
 
         reorder(reqOrder, app, "reqMatch", "reqOrder");
@@ -270,17 +276,14 @@ function swapp()
 
             if(app.hasOwnProperty("reqMatch"))
             {
-								//let b = performance.now();
+								createLabel("StartofAppRequestHandler:" + parseInt(req.id) + ":" + app.appname + ":" + req.url);
 
                 if(await app.reqMatch(fObject))
                 {
                     fObject = await app.reqApply(fObject);
                 }
 
-                // For evaluation
-								//let a = performance.now();
-								//totalAppTime += a-b;
-								//console.log("totalAppTime: ", totalAppTime);
+                createLabel("EndofAppRequestHandler:" + parseInt(req.id) + ":" + app.appname + ":" + req.url);
             }
         }
 
@@ -300,21 +303,19 @@ function swapp()
         {
             for(let i=0; i<appCount; i++)
             {
-                let app = apps[tcbOrder[i].pos];//apps[i];
+                let app = apps[tcbOrder[i].pos];
 
                 if(app.hasOwnProperty("tcbMatch"))
                 {
-										//let b = performance.now();
+										createLabel("StartofAppTCBHandler:" + parseInt(resp.id) + ":" + app.appname + ":" + resp.url);
+
                     if(app.tcbMatch)
                     {
                         // Inject app code into the TCB
                         fObject.setBody(writeBeforeMatchInternal(fObject.getBody(), app.tcbApply, "//__EOF__"));
                     }
 
-                    // For evaluation
-										//let a = performance.now();
-										//totalAppTime += a-b;
-										//console.log("totalAppTime: ", totalAppTime);
+                    createLabel("EndofAppTCBHandler:" + parseInt(resp.id) + ":" + app.appname + ":" + resp.url);
                 }
             }
 
@@ -333,17 +334,14 @@ function swapp()
 
                 if(app.hasOwnProperty("respMatch"))
                 {
-										//let b = performance.now();
+										createLabel("StartofAppResponseHandler:" + parseInt(resp.id) + ":" + app.appname + ":" + resp.url);
 
                     if(await app.respMatch(fObject))
                     {
 												fObject = await app.respApply(fObject);
                     }
 
-                    // For evaluation
-										//let a = performance.now();
-										//totalAppTime += a-b;
-										//console.log("totalAppTime: ", totalAppTime);
+                    createLabel("EndofAppResponseHandler:" + parseInt(resp.id) + ":" + app.appname + ":" + resp.url);
                 }
             }
 						
@@ -360,65 +358,93 @@ function swapp()
     // Internal function to inject the TCB into pages
     function initDocumentContext(fObject)
     {
-        return writeAfterMatchInternal(fObject.getBody(), "\n\t<script src=\"/tcb/init.js\"></script>", "<head>");
+      return writeAfterMatchInternal(fObject.getBody(), "\n\t<script src=\"./tcb/init.js\"></script>", "<head>");
     }
 
     // External function to handle requests
     this.handleRequest = async function(req)
     {
-        // Preprocess the request
-        let fObject = await processRequest(req);
+      currentFetchID += 1;
+      let localID = currentFetchID;
+      req.id = localID;
 
-        // Proceed to fetch and modify the response accordingly
-        if(fObject.getDecision() == "true")
-        {
-            let resp = await fetch(req);
-            return await handleResponse(resp, "true");
+      createLabel("StartRequestHandler:" + parseInt(localID) + ":" + req.url);
+      // Preprocess the request
+      let fObject = await processRequest(req);
+      createLabel("EndRequestHandler:" + parseInt(localID) + ":" + req.url);
+      // Proceed to fetch and modify the response accordingly
+      if(fObject.getDecision() == "true")
+      {
+        createLabel("StartActualRequest:" + parseInt(localID) + ":" + req.url);
 
-            //return fetch(req).then((resp) => handleResponse(resp, "true"));
-        }
-        else if(fObject.getDecision() == "cache")
-        {
-            let r = new Response(fObject.getBody(), fObject.getMetadata());
-						Object.defineProperty(r, "type", { value: fObject.getMetadata().type });
-						Object.defineProperty(r, "url", { value: fObject.getMetadata().url });
-						
-						return await handleResponse(r, "cache");
-        }
-        else if(fObject.getDecision() == "deny")
-        {
-            return null;
-        }
-        else{
-            //return error
+        let resp = await fetch(req);
+        resp.id = localID;
 
-        }
+        createLabel("EndActualRequestAndStartResponseHandler:" + parseInt(localID) + ":" + req.url);
+
+        let ret = await handleResponse(resp, "true");
+
+        createLabel("EndResponseHandler:" + parseInt(localID) + ":" + req.url);
+
+        getLabels();
+        return ret;
+      }
+      else if(fObject.getDecision() == "cache")
+      {
+        createLabel("StartResponseHandler:" + parseInt(localID) + ":" + req.url);
+
+        let r = new Response(fObject.getBody(), fObject.getMetadata());
+
+				Object.defineProperty(r, "type", { value: fObject.getMetadata().type });
+				Object.defineProperty(r, "url", { value: fObject.getMetadata().url });
+				r.id = localID;
+
+        let ret = await handleResponse(r, "cache");
+
+        createLabel("EndResponseHandler:" + parseInt(localID) + ":" + req.url);
+
+        getLabels();
+				return ret;
+      }
+      else if(fObject.getDecision() == "deny")
+      {
+        createLabel("EndResponseHandler:" + parseInt(localID) + ":" + req.url);
+
+        getLabels();
+        return null;
+      }
+      else{
+        //return error
+        createLabel("EndResponseHandler:" + parseInt(localID) + ":" + req.url);
+      }
     }
 
     // Internal function to handle responses
     async function handleResponse(resp, decision)
-    {
-				// If the response is invalid to reconstruct, then return the original without processing.
-				if(resp.type == "opaqueredirect" || resp.type == "error" || resp.type == "opaque")
-				{
-					return resp;
-				}
-				// Skip if it is a font
-				let contentType = resp.headers.get("Content-Type");
-				if((contentType && contentType.includes("font")) || resp.url.includes(".woff") || resp.url.includes(".eot") || resp.url.includes(".otf") || resp.url.includes(".ttf"))
-				{
-					return resp;
-				}
-				// Currently, we skip gif images, but may be useful to inspect gif image later
-				if(contentType && contentType.includes("gif"))
-				{
-					return resp;
-				}
-				
-        let fObject = await resp.text().then((body) => processResponse(resp, body, decision));
-				let ret = new Response(fObject.getBody(), fObject.getMetadata());
-				
-        return ret;
+    { 
+			// If the response is invalid to reconstruct, then return the original without processing.
+			if(resp.type == "opaqueredirect" || resp.type == "error" || resp.type == "opaque")
+			{
+				return resp;
+			}
+			// Skip if it is a font
+			let contentType = resp.headers.get("Content-Type");
+			if((contentType && contentType.includes("font")) || resp.url.includes(".woff") || resp.url.includes(".eot") || resp.url.includes(".otf") || resp.url.includes(".ttf"))
+			{
+				return resp;
+			}
+			// Currently, we skip gif images, but may be useful to inspect gif image later
+			if(contentType && contentType.includes("gif"))
+			{
+				return resp;
+			}
+			
+      let b = await resp.text();
+      let fObject = await processResponse(resp, b, decision);
+      //let fObject = await resp.text().then((body) => processResponse(resp, body, decision));
+			let ret = new Response(fObject.getBody(), fObject.getMetadata());
+			
+      return ret;
     }
 
     // External function to handle activate event
@@ -427,12 +453,12 @@ function swapp()
       appCount = apps.length;
       for(let i=0; i<appCount; i++)
       {
-          let app = apps[i];
+        let app = apps[i];
 
-          if(app.hasOwnProperty("onswactivate"))
-          {
-							app.onswactivate();
-          }
+        if(app.hasOwnProperty("onswactivate"))
+        {
+						app.onswactivate();
+        }
       }
     }
 
