@@ -77,13 +77,11 @@ For further details such as app configurations, please see [Apps.](https://githu
 
 | Name              | Status    | Description |
 | -----------       | --------- | ----------- |
-| [Autofill Guard](https://github.com/cpx0rpc/swapp/tree/main/apps#autofill-guard)    | Under Dev | An application to help isolate auto-filled forms from being read by malicious scripts injected through XSS. |
+| [Autofill Guard](https://github.com/cpx0rpc/swapp/tree/main/apps#autofill-guard)    | Finished | An application to help isolate auto-filled forms from being read by malicious scripts injected through XSS. |
 | [Cache Guard](https://github.com/cpx0rpc/swapp/tree/main/apps#cache-guard)       | Finished | An application to mitigate side-channel timing attack as discussed by [Karami et al.](https://www.ndss-symposium.org/ndss-paper/awakening-the-webs-sleeper-agents-misusing-service-workers-for-privacy-leakage/) |
 | [Workbox-App](https://github.com/cpx0rpc/swapp/tree/main/apps#workbox-app)       | Finished | An encapsulated Workbox library as a SWAPP app. Note that the actual Workbox file and configuration will still need to be generated as usual with a few lines of code editing. This app is more or less the wrapper. |
 | [Data Guard](https://github.com/cpx0rpc/swapp/tree/main/apps#data-guard)        | Finished | An application to reserve sensitive data in secure storage to protect it from being stolen by attackers in the document context | 
-| [DOM Guard](https://github.com/cpx0rpc/swapp/tree/main/apps#dom-guard)         | Under Dev | A simple skeleton code to implement SW-based XSS defenses such as XSS filtering. |
-| Integrity Checker | Under Dev | Text |
-| [JSZero](https://github.com/cpx0rpc/swapp/tree/main/apps#jszero)            | Under Dev | An application to mitigate side-channel attack discussed by [Schwarz et al.](https://www.ndss-symposium.org/wp-content/uploads/2018/02/ndss2018_07A-3_Schwarz_paper.pdf) This app implements a mini version of the proposed defense as a SWAPP app. |
+| [DOM Guard](https://github.com/cpx0rpc/swapp/tree/main/apps#dom-guard)         | Finished | A simple skeleton code to implement SW-based XSS defenses such as XSS filtering. |
+| [Integrity Checker](https://github.com/cpx0rpc/swapp/tree/main/apps#integrity-checker) | Finished | An application to check the integrity of the content from the server-side |
+| [JSZero](https://github.com/cpx0rpc/swapp/tree/main/apps#jszero)            | Finished | An application to mitigate side-channel attack discussed by [Schwarz et al.](https://www.ndss-symposium.org/wp-content/uploads/2018/02/ndss2018_07A-3_Schwarz_paper.pdf) This app implements a mini version of the proposed defense as a SWAPP app. |
 | [NativeEX](https://github.com/cpx0rpc/swapp/tree/main/apps#nativeex)          | Finished | A helper app to modify native APIs in the document context. |
-| ReDoS Defense     | Under Dev | Text |
-| X-Frame-Options   | Under Dev | Text |
