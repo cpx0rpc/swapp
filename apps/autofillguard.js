@@ -1,5 +1,6 @@
 var autofillguard = new Object();
 
+autofillguard.appname = "AUTOFILLGUARD";
 autofillguard.curr_id = 0;
 autofillguard.mTable = {};
 autofillguard.iTable = {};
@@ -59,7 +60,7 @@ autofillguard.respMatch = function(fObj)
 	return false;
 }
 
-autofillguard.respApply = async function(fObj)
+autofillguard.respAction = async function(fObj)
 {
 	let body = fObj.getBody();
 	let url = new URL(fObj.getMetadata().url);
@@ -118,7 +119,7 @@ autofillguard.respApply = async function(fObj)
 
 					body = body.replace(form_match_exp, "<iframe src=http://" + url.hostname + "?autofillguardID=" + autofillguard.curr_id + " frameBorder=0></iframe>");
 					fObj.setBody(body);
-					fObj.setDecision("true");
+					fObj.setDecision("dirty");
 
 					autofillguard.next_id();
 				}
@@ -164,14 +165,15 @@ autofillguard.reqMatch = function(fObj)
 	return false;
 }
 
-autofillguard.reqApply = function(fObj)
+autofillguard.reqAction = function(fObj)
 {
-	let params = (new URL(fObj.getMetadata().url)).searchParams;
+  let url = new URL(fObj.getMetadata().url);
+	let params = url.searchParams;
 	let id = params.get('autofillguardID');
 
 	if(id in autofillguard.mTable)
 	{
-		fObj.setMeta({"status": 200, "statusText": "OK", "headers": {'Content-Type': 'text/html'}});
+		fObj.setMeta({"status": 200, "url": url.toString(), "statusText": "OK", "headers": {'Content-Type': 'text/html'}});
 		fObj.setBody(autofillguard.mTable[id]);
 		fObj.setDecision("cache");
 	}
@@ -188,13 +190,13 @@ autofillguard.reqApply = function(fObj)
 				})
 			});
 
-			fObj.setMeta({"status": 200, "statusText": "OK", "headers": {'Content-Type': 'text/html'}});
+			fObj.setMeta({"status": 200, "url": url.toString(), "statusText": "OK", "headers": {'Content-Type': 'text/html'}});
 			fObj.setBody("[AG] Loading");
 			fObj.setDecision("cache");
 		}
 		else
 		{
-			fObj.setMeta({"status": 200, "statusText": "OK", "headers": {'Content-Type': 'text/html'}});
+			fObj.setMeta({"status": 200, "url": url.toString(), "statusText": "OK", "headers": {'Content-Type': 'text/html'}});
 			fObj.setBody(autofillguard.currBody);
 			fObj.setDecision("cache");
 		}
@@ -205,7 +207,7 @@ autofillguard.reqApply = function(fObj)
 
 autofillguard.tcbMatch = true;
 
-autofillguard.tcbApply = `
+autofillguard.tcbAction = `
 var autofillguard = new Object();
 
 autofillguard.msgLabel = ["AUTOFILLGUARD"];

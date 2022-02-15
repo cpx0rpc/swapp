@@ -148,18 +148,18 @@ The list of functions that need to be frozen is not finished and will be updated
   Object.freeze(HTMLElement.contentWindow);
  
 
-	// Allocate an indexedDB entry for exclusive usage inside SWAPP. Internal usage utilizes idb_open() instead.
+	// Allocate an indexedDB entry for exclusive usage inside SWAPP. Internal usage utilizes idb_internal() instead.
 
 	var idb_open = indexedDB.open.bind(indexedDB);
 
 	var inst_idbopen = function(name, version){
-		if(name != "SWAPP_PRIVATE")
+		if(name != "SWAPP_DB" && name != "SW_DB")
 		{
 			return idb_open.apply(window, arguments);
 		}
 		else
 		{
-			return new Error("Access not allowed outside SWAPP");
+			return new Error("Access not allowed outside SWAPP.");
 		}
 	};
 
@@ -169,6 +169,16 @@ The list of functions that need to be frozen is not finished and will be updated
 		writable: false
 	});
 
+  var idb_internal = function(name, version) {
+    if(name != "SW_DB")
+    {
+      return idb_open.apply(window, arguments);
+    }
+    else
+    {
+	    return new Error("Access not allowed outside SW.");
+    }
+  };
   
   // Some helper functions mostly for checkIntegrity().
 

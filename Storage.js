@@ -157,6 +157,8 @@ async function getLabels()
 {
   let labels = await edb.getAll();
   let results = [];
+  let core = 0;
+  let apps = {};
 
   for(let i=0; i<labels.length; i++)
   {
@@ -166,7 +168,6 @@ async function getLabels()
     if(results[g])
     {
       results[g].push(labels[i]);
-
     }
     else
     {
@@ -180,16 +181,27 @@ async function getLabels()
     {
       for(let j=results[i].length-1; j>0; j--)
       {
-        results[i][j]["time"] = results[i][j]["time"] - results[i][j-1]["time"];
+        let diff = results[i][j]["time"] - results[i][j-1]["time"];
+        let arr = results[i][j]["label"].split(":", 3);
+
+        results[i][j]["time"] = diff;
+
+        if(arr[0].includes("StartofAppRequestHandler") || arr[0].includes("EndRequestHandler") || arr[0].includes("StartActualRequest") || arr[0].includes("StartofAppResponseHandler") || arr[0].includes("EndResponseHandler"))
+        {
+          core += diff;
+        }
+        else if(arr[0].includes("EndofAppRequestHandler") || arr[0].includes("EndofAppResponseHandler"))
+        {
+          if(!apps.hasOwnProperty(arr[2]))
+          {
+            apps[arr[2]] = 0;
+          }
+
+          apps[arr[2]] += diff;
+        }
       }
     }
   }
 
-  console.log(results);
+  console.log(core, apps, results);
 }
-
-createLabel("Test");
-
-createLabel("Test2");
-
-getLabels();

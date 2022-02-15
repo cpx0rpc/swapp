@@ -98,7 +98,7 @@ appObj.respMatch = function(fObject){
 }
 
 // Verify the signature and return deny if a mismatching is found
-appObj.respApply = async function(fObject){
+appObj.respAction = async function(fObject){
     var f2f_sign = fObject.getMetadata().headers.get("F2F-signature");
     var f2f_body = fObject.getBody();
 
@@ -120,12 +120,12 @@ appObj.respApply = async function(fObject){
                                enc.encode(f2f_body)).then(function(sign){sig = sign;});
     if(sig)
     {
-        fObject.setDecision("true");
+        fObject.setDecision("dirty");
         return fObject;
     }
     else 
     {
-        fObject.setDecision("deny");
+        fObject.setDecision("drop");
         return fObject;
     }
 };

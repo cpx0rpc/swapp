@@ -15,7 +15,7 @@ appObj.respMatch = function(fObject){
     return true;
 }
 
-appObj.respApply = async function(fObject){
+appObj.respAction = async function(fObject){
     var transaction = swappInst.storage.db.transaction('data_guard', 'readwrite');
     var store = transaction.objectStore('data_guard');
 
@@ -45,7 +45,7 @@ appObj.reqMatch = function(fObject){
     return true;
 }
 
-appObj.reqApply = function(fObject){
+appObj.reqAction = function(fObject){
     var transaction = swappInst.storage.db.transaction('data_guard', 'readwrite');
     var store = transaction.objectStore('data_guard');
 

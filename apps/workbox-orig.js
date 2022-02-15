@@ -85,7 +85,7 @@ define("./workbox-sw.js", [], (function() {
         get routes() {
             return this.t
         }
-        addFetchListener() {/*
+        addFetchListener() {
             self.addEventListener("fetch", (e => {
                 const {
                     request: t
@@ -94,10 +94,10 @@ define("./workbox-sw.js", [], (function() {
                     event: e
                 });
                 s && e.respondWith(s)
-            }))*/
-						let ref = this;
+            }))
+						/*let ref = this;
 
-						wbApp.reqAction = async function(fObj) {
+						wbApp.reqApply = async function(fObj) {
 							let e = fObj.getMetadata();
 
 							const {
@@ -116,11 +116,11 @@ define("./workbox-sw.js", [], (function() {
               }
               else
               {
-                fObj.setDecision("dirty");
+                fObj.setDecision("true");
               }
 
 							return fObj;
-						}
+						}*/
         }
         addCacheListener() {
             self.addEventListener("message", (e => {
@@ -139,7 +139,7 @@ define("./workbox-sw.js", [], (function() {
                 }
             }))
         }
-        wbHandleRequest({
+        handleRequest({
             request: e,
             event: t
         }) {

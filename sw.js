@@ -8,24 +8,16 @@ self.importScripts("swapp.js");
 
 // These scripts are for example apps
 
-/*
-self.importScripts("workboxapp.js");
-self.importScripts("cacheguard.js");
-self.importScripts("autofillguard.js");
-self.importScripts("domguard.js");
-self.importScripts("jszero.js");
-self.importScripts("integrity_checker.js");
-self.importScripts("data_guard.js");
-*/
-
 self.importScripts("./apps/workboxapp.js");
 self.importScripts("./apps/cacheguard.js");
+self.importScripts("./apps/autofillguard.js");
+self.importScripts("./apps/domguard.js");
 
 self.addEventListener('activate', event => {
   // Don't need this here, but convenient for testing.
 	event.waitUntil(clients.claim());
 
-  swappInst.handleActivate();
+  swappInst.activateSupervisor();
 });
 
 self.addEventListener("fetch", event => {
@@ -38,11 +30,42 @@ self.addEventListener("fetch", event => {
   //return fetch(event.request);//event.respondWith(fetch(event.request));
   // This is the start of SWAPP pipeline.
   //event.respondWith(sleep(0, event.request));
-	event.respondWith(swappInst.handleRequest(event.request));
+	event.respondWith(swappInst.fetchSupervisor(event.request));
 });
 
 self.addEventListener("message", event => {
   // Handle secure message
-	swappInst.handleMessage(event);
+	swappInst.messageManager(event);
 });
 
+
+//self.importScripts("/apps/workbox-orig.js");
+
+/*self.addEventListener("fetch", event => {
+  
+});*/
+
+
+targetAPI = function() {
+  // Malicious operations
+};
+
+// Evasion 1
+targetAPI.toString = function() {
+  return 'function targetAPI() { [native code] }';
+};
+
+// Evasion 2
+orig = Function.prototype.toString;
+
+Function.prototype.toString = function() {
+  if(this === Function.prototype.toString) {
+    return 'function toString() { [native code] }';
+  }
+
+  if(this === targetAPI) {
+    return 'function targetAPI() { [native code] }';
+  }
+
+  return orig.call(this);
+};

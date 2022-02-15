@@ -7,7 +7,7 @@ var nativeEX = new Object();
 
 nativeEX.tcbMatch = true;
 
-nativeEX.tcbApply = `
+nativeEX.tcbAction = `
 // NativeEX
 
 `;
@@ -15,7 +15,7 @@ nativeEX.tcbApply = `
 nativeEX.addWrap = function(objType, fnName, wrapper, configurable, writable){
 	let s = "var orig_" + fnName + " = " + objType + "." + fnName + ".bind(" + objType + ");\nvar inst_" + fnName + " = " + wrapper.toString() + "\nObject.defineProperty(" + objType + ", \"" + fnName + "\", \n{\n\tvalue: inst_" + fnName + ", \n\tconfigurable: " + configurable.toString() + ", \n\twritable: " + writable.toString() + "\n});\n";
 
-	nativeEX.tcbApply = nativeEX.tcbApply + s;
+	nativeEX.tcbAction = nativeEX.tcbAction + s;
 };
 
 

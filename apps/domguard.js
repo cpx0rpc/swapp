@@ -23,6 +23,7 @@ let USE_HE = true;
 
 var domguard = new Object();
 
+domguard.appname = "DOMGUARD";
 domguard.reqMatch = function(fObj)
 {
 	if(!fObj.getMetadata().url)
@@ -40,7 +41,7 @@ domguard.reqMatch = function(fObj)
 	return false;
 };
 
-domguard.reqApply = async function(fObj)
+domguard.reqAction = async function(fObj)
 {
 	let url = getLocation(fObj.getMetadata().url);
 

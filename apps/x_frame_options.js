@@ -6,7 +6,7 @@ appObj.respMatch = function(fObject){
     return true;
 }
 
-appObj.respApply = function(fObject){
+appObj.respAction = function(fObject){
     
 };
 
@@ -14,7 +14,7 @@ appObj.reqMatch = function(fObject){
     return true;
 }
 
-appObj.reqApply = function(fObject){
+appObj.reqAction = function(fObject){
 
 }
 

@@ -5,7 +5,7 @@ wbApp.reqMatch = function(fObj)
 	return true;
 };
 
-self.importScripts("workbox-sw.js");
+self.importScripts("./apps/workbox-sw.js");
 
 swappInst.addApp(wbApp);
 
