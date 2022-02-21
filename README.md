@@ -85,3 +85,4 @@ For further details such as app configurations, please see [Apps.](https://githu
 | [Integrity Checker](https://github.com/cpx0rpc/swapp/tree/main/apps#integrity-checker) | Finished | An application to check the integrity of the content from the server-side |
 | [JSZero](https://github.com/cpx0rpc/swapp/tree/main/apps#jszero)            | Finished | An application to mitigate side-channel attack discussed by [Schwarz et al.](https://www.ndss-symposium.org/wp-content/uploads/2018/02/ndss2018_07A-3_Schwarz_paper.pdf) This app implements a mini version of the proposed defense as a SWAPP app. |
 | [NativeEX](https://github.com/cpx0rpc/swapp/tree/main/apps#nativeex)          | Finished | A helper app to modify native APIs in the document context. |
+| [JSONP Guard](https://github.com/cpx0rpc/swapp/tree/main/apps#nativeex)          | Implementing | An application to validate JSONP return value to prevent JSONP XSS Attacks. |
