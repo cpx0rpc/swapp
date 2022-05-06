@@ -14,9 +14,12 @@ function str2ab(str) {
 }
 
 // public key in jwk format
-const pemEncodedPublicKey = {"kty":"RSA","e":"AQAB","kid":"d7f6a2f4-f0fa-49fc-a5f6-f1672dc7930e","n":"eKoVulrxXmpKKOe3YxiM-MI1BIQrnLm-LkTKwL-xtYbB5zC0YV2MWenfejv6Hgs71GQ3XNA33e3mGasDmlGXaliqPvhJ36pWa6PPEgBGwjr7Wsr5XiPoLA0vJ45Dc0UKY954yaHKTvb0suPp9-Ad_VmnYESZ8lKUEazS7L4oRjMWyx1PknuH-wJqTNDUnT0RtPIpFQRiPNBz-cemK1REj0TpINe8Mebj6ODYlG3YTM4S5IUeOIN8xU8UxUTbQ-I4eBNLQ9T9wjIqY_2yf0pZeTRGBuSl4DXT49JdpKI94HOG5yXtkGP4zxDFvBiiPTFMjIUEMe9eTkX0E_6f5plLkw"};
-
-
+const pemEncodedPublicKey = {
+    "kty":"RSA",
+    "e":"AQAB",
+    "kid":"d7f6a2f4-f0fa-49fc-a5f6-f1672dc7930e",
+    "n":"eKoVulrxXmpKKOe3YxiM-MI1BIQrnLm-LkTKwL-xtYbB5zC0YV2MWenfejv6Hgs71GQ3XNA33e3mGasDmlGXaliqPvhJ36pWa6PPEgBGwjr7Wsr5XiPoLA0vJ45Dc0UKY954yaHKTvb0suPp9-Ad_VmnYESZ8lKUEazS7L4oRjMWyx1PknuH-wJqTNDUnT0RtPIpFQRiPNBz-cemK1REj0TpINe8Mebj6ODYlG3YTM4S5IUeOIN8xU8UxUTbQ-I4eBNLQ9T9wjIqY_2yf0pZeTRGBuSl4DXT49JdpKI94HOG5yXtkGP4zxDFvBiiPTFMjIUEMe9eTkX0E_6f5plLkw"
+};
 
 // Convert the rsa key from string to CyptoKey Objects
 function importRsaKey(pem, type) {
@@ -92,7 +95,6 @@ appObj.respAction = async function(fObject){
 
     let enc = new TextEncoder();
 
-    
     // Verify the signature
     var sig;
     await crypto.subtle.verify(
@@ -100,6 +102,7 @@ appObj.respAction = async function(fObject){
                                pubkey,
                                f2f_sign,
                                enc.encode(f2f_body)).then(function(sign){sig = sign;});
+    
     if(sig)
     {
         fObject.setDecision("dirty");
@@ -115,4 +118,3 @@ appObj.respAction = async function(fObject){
 setTimeout(function () {
     f2fInst.addApp(appObj);
 }, 500)
-
