@@ -16,19 +16,7 @@ function str2ab(str) {
 // public key in jwk format
 const pemEncodedPublicKey = {"kty":"RSA","e":"AQAB","kid":"d7f6a2f4-f0fa-49fc-a5f6-f1672dc7930e","n":"eKoVulrxXmpKKOe3YxiM-MI1BIQrnLm-LkTKwL-xtYbB5zC0YV2MWenfejv6Hgs71GQ3XNA33e3mGasDmlGXaliqPvhJ36pWa6PPEgBGwjr7Wsr5XiPoLA0vJ45Dc0UKY954yaHKTvb0suPp9-Ad_VmnYESZ8lKUEazS7L4oRjMWyx1PknuH-wJqTNDUnT0RtPIpFQRiPNBz-cemK1REj0TpINe8Mebj6ODYlG3YTM4S5IUeOIN8xU8UxUTbQ-I4eBNLQ9T9wjIqY_2yf0pZeTRGBuSl4DXT49JdpKI94HOG5yXtkGP4zxDFvBiiPTFMjIUEMe9eTkX0E_6f5plLkw"};
 
-// private key in jwk format
-const pemEncodedPrivateKey = {
-    "p":"5TeiLr6pTbva4hjsrHGUrujn3OugBSrZb7uAQb47BjteMtlc3RLa5BjxcJu--eHtpIP-xPevLHrCskq_TD93XJJj-GDz2vf7YLi7aQOThYZxu751QaCkCb8q2F4Zc3Gs4QTBQHmf6-ExE5x-v6W8bZVwCqNpZsEFyDkH6a0npcs",
-"kty":"RSA",
-"q":"hsNoYOJ7hML-fS89PATgpiBnSfPLwryUYMHMfrGjOsuya2HDDwQ5vp3vwKP_Tgxnk86-jFEwRrZFoS76GSW4VRdqbYT1JoXj79oAjaOkt-Ue0jT4NLCM1R-zNa7jpkER3lNCQ21ZwD9kXWaB8Wqus7QrReXqJu6LvGNfPVsc-Fk",
-"d":"cHPqvftFWP1r0cVplnPp5Wdw652V24ELaal437uHDariCOjOIrOBOsaIHC3LQrarcpxXMCto9W5h9Gf5epcxqs2pE_hnOIhR9Az8zUTurNM1L39ceUyzcmJzIMUnvUSJk1thbGBY39Ctag6YHQeES3mDUGd-pWQqVHKhPDtX41skWrguo-dwSZ8igppiGR4qijbntzVaF9tOi5MpiNRKJGS_rGjrDCQI2GTu-DCKNlEhOZ1gM7HHr6VlPVdiaUIt-gwhSq_EMZSZJLjDLHJsLJX41kNMUliHVK-vgZ9JIUOKe63RlS7Y-f88jSdv_49MABc29RsJiO6Vt3m2DlYSMQ",
-"e":"AQAB",
-"kid":"97b73c6c-f089-4109-a2e7-6b98f36301e7",
-"qi":"N-KGY-yJlBT41RcCTy72-Cnx2bBGXHsTqQ1f5RJ04gLlrZSmZGmEgcjgGVY6PD7Ii40DORKVM7RCOt-PEs8WDAki8FL2EYJjMYgpdHv3Ay6uPN4xsUgACB4nmWrhFvX6Hqj4GhouAh4CbhrkHdtkzsJQbxEGdZGM-aGxACpm78I",
-"dp":"JrXqkfJpLVOYd6616bmU3qU-4zR35eeCqTgFRRUXasoD8pp68GsKxJLh05659gGN3Mbd8-3Qi7Z_wxSUkg_13JBsibn19PkEXyVToTyVYWt_MbHMo7S5f1vlpHzf13tPMwFWkcj4lSGG5ET9sugOloMyVNmcJ1pZ26KmD3TKyVk",
-"dq":"V1Og-8dHi0xgZPaLk60FdiFhTUayL0rMS7bJsP-jaqI8x-Dd6YkvchoeFpMvCYB4TguW5o5l3iyXCk_KuSj8Pgeia73QrlnszqxR13bHcnMCeezhOiN9301fb9YYps9bqNoDAnaFxlJN00htw-cBtml18SF_jiLeYgFy4et85mE",
-"n":"eKoVulrxXmpKKOe3YxiM-MI1BIQrnLm-LkTKwL-xtYbB5zC0YV2MWenfejv6Hgs71GQ3XNA33e3mGasDmlGXaliqPvhJ36pWa6PPEgBGwjr7Wsr5XiPoLA0vJ45Dc0UKY954yaHKTvb0suPp9-Ad_VmnYESZ8lKUEazS7L4oRjMWyx1PknuH-wJqTNDUnT0RtPIpFQRiPNBz-cemK1REj0TpINe8Mebj6ODYlG3YTM4S5IUeOIN8xU8UxUTbQ-I4eBNLQ9T9wjIqY_2yf0pZeTRGBuSl4DXT49JdpKI94HOG5yXtkGP4zxDFvBiiPTFMjIUEMe9eTkX0E_6f5plLkw"
-};
+
 
 // Convert the rsa key from string to CyptoKey Objects
 function importRsaKey(pem, type) {
@@ -104,13 +92,7 @@ appObj.respAction = async function(fObject){
 
     let enc = new TextEncoder();
 
-    // [testing only] generate the signature to pass the verification. should be moved to the server side.
-    var f2f_sign;
-    await crypto.subtle.sign(
-                             "RSASSA-PKCS1-v1_5",
-                             prikey,
-                             enc.encode(f2f_body)).then(function(sign){f2f_sign = sign;});
-
+    
     // Verify the signature
     var sig;
     await crypto.subtle.verify(
