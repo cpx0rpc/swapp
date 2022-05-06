@@ -256,5 +256,3 @@ document.addEventListener("resetCacheGuard", () => {
 
 console.log("[C]ache[G]uard activated");
 swappInst.addApp(cacheGuard);
-
-

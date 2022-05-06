@@ -219,9 +219,5 @@ autofillguard.msgHandler = function(label, msg)
 handlers.push(autofillguard);
 `;
 
-// For evaluation
-autofillguard.setRespMatchPath("http://eval2.com/");
-autofillguard.setActionMatch(/ucp.php/);
-
 console.log("[A]utofill[G]uard activated");
 swappInst.addApp(autofillguard);
