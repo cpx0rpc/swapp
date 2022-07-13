@@ -1,17 +1,35 @@
 <head>
-	<title> Project Test </title>
+	<title> Data Guard Demo </title>
 </head>
 
 <body>
-	This is body
-
 	<script>
 		navigator.serviceWorker.register("sw.js");
 		
 	</script>
 
-	<a href="/this_is_a_regular_uri">regular</a>
-	<a href="/12345678901234567890123456789012">token</a>
+	<H1>Data Guard Demo</H1>
+	<h3>Introduction</h3>
+	<p>Data Guard is to preserve data inside service worker so that the data won't be accessible in the document context. By doing so, we can protect the data from being stolen by XSS attackers.</p>
+	<h3>Step to test</h3>
+	1. (already completed when you see this page) install SWAPP by accessing this page.
+	<br>
+	2. Open Dev Tools to check the original links in this webpage. We have one unprivileged link and one privileged link authorized by token in the URL. You can click the links to check the original URLs and responses.
+	<br>
+	3. Refresh this page to let SWAPP replace sensitive links (the one with a token) with hash values.
+	<br>
+	4. Check the replaced links with Dev Tools.
+	<br>
+	5. Click on the sensitive link to check the new responses overwritten by Data Guard.
+	<br>
+	6. Copy and paste the URL to another browser. It will show 404 error, which means the privileged URL is only available for the one who retrieves it from the server. Attackers that steals the privileged URL are unable to use it.
+
+	<br>
+	<br>
+	<a href="/this_is_a_regular_uri.html">unprivileged link</a>
+	<br>
+	<br>
+	<a href="/48123dfbf4090c724b2dafed3fcc7db5.html">privileged link</a>
 
 
 </body>
