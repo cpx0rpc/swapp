@@ -299,15 +299,15 @@ appObj.reqAction = async function(fObject){
                     // if this is the correct record
                     // replace the url back
                     var actual_url = target_url.replace(v.value, v.entry)
-                    new_meta = new Request(actual_url, {mode: "no-cors"});
+                    new_meta = new Request(actual_url);
 
-                    var reqfghjk = new Request(actual_url);
-                    var new_body;
-                    await fetch(reqfghjk).then(res => {reqfghjk_1 = res;});
-                    await reqfghjk_1.text().then(text => {new_body = text});
-                    fObject.setBody(new_body);
-                    fObject.setMeta({"status": 200, "url": actual_url, "statusText": "OK", "headers": {'Content-Type': 'text/html'}});
-                    decision = "cache";
+                    //var reqfghjk = new Request(actual_url);
+                    //var new_body;
+                    //await fetch(reqfghjk).then(res => {reqfghjk_1 = res;});
+                    //await reqfghjk_1.text().then(text => {new_body = text});
+                    //fObject.setBody(new_body);
+                    //fObject.setMeta({"status": 200, "url": actual_url, "statusText": "OK", "headers": {'Content-Type': 'text/html'}});
+                    //decision = "dirty";
                     break;
                 }
             }
@@ -315,9 +315,9 @@ appObj.reqAction = async function(fObject){
         }
     })
 
-    // if(new_meta){
-    //     fObject.setMeta(new_meta);
-    // }
+    if(new_meta){
+        fObject.setMeta(new_meta);
+    }
 
     fObject.setDecision(decision);
     return fObject;
