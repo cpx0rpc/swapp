@@ -61,13 +61,15 @@ cacheGuard.sleep = async function(ms) {
 
 cacheGuard.reqMatch = async function(fObj)
 {
+  let url = new URL(fObj.getMetadata().url);
+
   if(!cacheGuard.loaded)
   {
     await cacheGuard.load();
   }
 
 	//Start counting the load time
-	cacheGuard.loadTime[fObj.getMetadata().url] = performance.now();
+	cacheGuard.loadTime[url.href] = performance.now();
 
   if(!cacheGuard.session.u[origin])
   {
@@ -83,16 +85,32 @@ cacheGuard.reqMatch = async function(fObj)
   {
 	  return true;
   }
+
+  let path = url.pathname
+	if(cacheGuard.dummyElement[path])
+	{
+		return true;
+	}
   
   return false;
 }
 
-cacheGuard.reqApply = async function(fObj)
+cacheGuard.reqAction = async function(fObj)
 {
   let url = new URL(fObj.getMetadata().url);
   let origin = url.origin;
 
-	//1. Heuristic: Block all 3rd party referrer
+
+  // Heuristic: Delay the cache response to make it look like the request is done over the network
+  let path = url.pathname
+	if(cacheGuard.dummyElement[path])
+	{
+		await new Promise(resolve => setTimeout(resolve, cacheGuard.session.u[origin]));
+    fObj.setBody("");
+    fObj.setDecision("cache");
+	}
+
+	// Heuristic: Block all 3rd party referrer
 	let r = fObj.getMetadata().referrer;
 
 	if(r)
@@ -101,16 +119,7 @@ cacheGuard.reqApply = async function(fObj)
 
 		if(cacheGuard.session.allowedReferer.indexOf(referer) < 0)
 		{
-			fObj.setDecision("deny");
-		}
-
-		//2. Heuristic: Delay the cache response to make it look like the request is done over the network
-    let path = url.pathname
-		if(cacheGuard.dummyElement[path])
-		{
-			await new Promise(resolve => setTimeout(resolve, cacheGuard.session.u[origin]));
-      fObj.setBody("");
-      fObj.setDecision("cache");
+			fObj.setDecision("drop");
 		}
 	}
 
@@ -203,7 +212,7 @@ cacheGuard.respMatch = async function(fObj)
 
   if(delay)
   {
-    //2. Heuristic: Delay the cache response to make it look like the request is done over the network
+    // Heuristic: Delay the cache response to make it look like the request is done over the network
 	  if(fObj.getDecision() == "cache")
 	  {
       console.log("Delaying", cacheGuard.session.u[origin]);
@@ -228,7 +237,7 @@ cacheGuard.genrandomid = function() {
   return "/" + result.join('');
 }
 
-cacheGuard.respApply = function(fObj)
+cacheGuard.respAction = function(fObj)
 {
   //Inject dummy element
   let randomelem = cacheGuard.genrandomid();
@@ -239,7 +248,7 @@ cacheGuard.respApply = function(fObj)
 }
 
 cacheGuard.tcbMatch = true;
-cacheGuard.tcbApply = `
+cacheGuard.tcbAction = `
 document.addEventListener("resetCacheGuard", () => {
   sendMsg(["cacheguard"], "reset");
 });
@@ -247,5 +256,3 @@ document.addEventListener("resetCacheGuard", () => {
 
 console.log("[C]ache[G]uard activated");
 swappInst.addApp(cacheGuard);
-
-

@@ -25,7 +25,7 @@ self.addEventListener('activate', event => {
   // Don't need this here, but convenient for testing.
 	event.waitUntil(clients.claim());
 
-  swappInst.handleActivate();
+  swappInst.activateSupervisor();
 });
 
 self.addEventListener("fetch", event => {
@@ -38,11 +38,11 @@ self.addEventListener("fetch", event => {
   //return fetch(event.request);//event.respondWith(fetch(event.request));
   // This is the start of SWAPP pipeline.
   //event.respondWith(sleep(0, event.request));
-	event.respondWith(swappInst.handleRequest(event.request));
+	event.respondWith(swappInst.fetchSupervisor(event.request));
 });
 
 self.addEventListener("message", event => {
   // Handle secure message
-	swappInst.handleMessage(event);
+	swappInst.messageManager(event);
 });
 

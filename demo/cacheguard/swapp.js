@@ -2,17 +2,29 @@
 The primitive object that will be passed around the framework.
 Contain the metadata (i.e., HTTP headers) and content (HTTP body).
 The decision can be set so that the framework can reject a request/response.
-The execution and priority orders are specified later when adding apps using oProp/mProp.
+The execution and priority orders are specified later when adding apps using eOrder/pLevel.
 */
 function fProto(initdecision)
 {
-    let decision = initdecision || "true";
+    let decision = initdecision || "dirty";
     let metadata = {};
     let body = "";
     let headers = {};
+    let curr_pLevel = 0;
+    let orig_metadata = {};
+    let orig_body = "";
+    let orig_headers = {};
 
-    this.setDecision = function(givenDecision){
-        decision = givenDecision;
+    this.setDecision = function(givenDecision, pLevel){
+        if(!pLevel)
+        {
+          pLevel = curr_pLevel+1;
+        }
+        if(curr_pLevel < pLevel)
+        {
+          decision = givenDecision;
+          curr_pLevel = pLevel;
+        }
     };
 
 		this.updateMeta = function(update){
@@ -47,21 +59,38 @@ function fProto(initdecision)
 		};
 
     this.setMeta = function(givenMetadata){
+        if(Object.keys(metadata).length == 0)
+        {
+          orig_metadata = givenMetadata;
+        }
+
         metadata = givenMetadata;
     };
 
     this.setBody = function(givenBody){
+        if(body == "")
+        {
+          orig_body = givenBody;
+        }
+
         body = givenBody;
     };
 
     this.setHeaders = function(givenHeaders){
+        if(Object.keys(headers).length == 0)
+        {
+          orig_headers = givenHeaders;
+        }
+
         headers = givenHeaders;
     }
 
     this.getDecision = function(){return decision;};
     this.getMetadata = function(){return metadata;};
+    this.getOrigMetadata = function(){return orig_metadata;};
     this.getHeaders = function(){return headers;};
     this.getBody = function(){return body;};
+    this.getOrigBody = function(){return orig_body;};
 }
 
 //
@@ -105,16 +134,16 @@ function swapp()
     }
 
     // Reorder the app execution order upon adding new apps
-    function reorder(arr, app, mProp, oProp)
+    function reorder(arr, app, mProp, eOrder)
     {
         if(app.hasOwnProperty(mProp))
         {
-            if(app.hasOwnProperty(oProp))
+            if(app.hasOwnProperty(eOrder))
             {
                 let o = new Object();
 
                 o.pos = apps.length - 1;
-                o.orderLevel = app[oProp];
+                o.orderLevel = app[eOrder];
 
                 if(arr.length == 0)
                 {
@@ -183,7 +212,7 @@ function swapp()
 
         for(let i=0; i<list.length; i++)
         {
-            if(contentType.includes(list[i]))
+            if(contentType && contentType.includes(list[i]))
             {
                 return true;
             }
@@ -200,7 +229,7 @@ function swapp()
 
         for(let i=0; i<list.length; i++)
         {
-            if(contentType.includes(list[i]))
+            if(contentType && contentType.includes(list[i]))
             {
                 return true;
             }
@@ -260,7 +289,7 @@ function swapp()
     };
 
     // Internal function to handle requests
-    async function processRequest(req)
+    async function CEGRequest(req)
     {
         let appCount = reqOrder.length;
         let fObject = new fProto();
@@ -280,7 +309,7 @@ function swapp()
 
                 if(await app.reqMatch(fObject))
                 {
-                    fObject = await app.reqApply(fObject);
+                    fObject = await app.reqAction(fObject);
                 }
 
                 createLabel("EndofAppRequestHandler:" + parseInt(req.id) + ":" + app.appname + ":" + req.url);
@@ -312,7 +341,7 @@ function swapp()
                     if(app.tcbMatch)
                     {
                         // Inject app code into the TCB
-                        fObject.setBody(writeBeforeMatchInternal(fObject.getBody(), app.tcbApply, "//__EOF__"));
+                        fObject.setBody(writeBeforeMatchInternal(fObject.getBody(), app.tcbAction, "//__EOF__"));
                     }
 
                     createLabel("EndofAppTCBHandler:" + parseInt(resp.id) + ":" + app.appname + ":" + resp.url);
@@ -338,7 +367,7 @@ function swapp()
 
                     if(await app.respMatch(fObject))
                     {
-												fObject = await app.respApply(fObject);
+												fObject = await app.respAction(fObject);
                     }
 
                     createLabel("EndofAppResponseHandler:" + parseInt(resp.id) + ":" + app.appname + ":" + resp.url);
@@ -362,7 +391,7 @@ function swapp()
     }
 
     // External function to handle requests
-    this.handleRequest = async function(req)
+    this.fetchSupervisor = async function(req)
     {
       currentFetchID += 1;
       let localID = currentFetchID;
@@ -370,10 +399,11 @@ function swapp()
 
       createLabel("StartRequestHandler:" + parseInt(localID) + ":" + req.url);
       // Preprocess the request
-      let fObject = await processRequest(req);
+      let fObject = await CEGRequest(req);
       createLabel("EndRequestHandler:" + parseInt(localID) + ":" + req.url);
       // Proceed to fetch and modify the response accordingly
-      if(fObject.getDecision() == "true")
+
+      if(fObject.getDecision() == "original")
       {
         createLabel("StartActualRequest:" + parseInt(localID) + ":" + req.url);
 
@@ -382,7 +412,24 @@ function swapp()
 
         createLabel("EndActualRequestAndStartResponseHandler:" + parseInt(localID) + ":" + req.url);
 
-        let ret = await handleResponse(resp, "true");
+        let ret = await CEGResponse(resp, "original");
+
+        createLabel("EndResponseHandler:" + parseInt(localID) + ":" + req.url);
+
+        getLabels();
+        return ret;
+      }
+      else if(fObject.getDecision() == "dirty")
+      {
+        createLabel("StartActualRequest:" + parseInt(localID) + ":" + req.url);
+
+        let meta = fObject.getMetadata();
+        let resp = await fetch(new Request(meta));
+        resp.id = localID;
+
+        createLabel("EndActualRequestAndStartResponseHandler:" + parseInt(localID) + ":" + req.url);
+
+        let ret = await CEGResponse(resp, "dirty");
 
         createLabel("EndResponseHandler:" + parseInt(localID) + ":" + req.url);
 
@@ -399,14 +446,14 @@ function swapp()
 				Object.defineProperty(r, "url", { value: fObject.getMetadata().url });
 				r.id = localID;
 
-        let ret = await handleResponse(r, "cache");
+        let ret = await CEGResponse(r, "cache");
 
         createLabel("EndResponseHandler:" + parseInt(localID) + ":" + req.url);
 
         getLabels();
 				return ret;
       }
-      else if(fObject.getDecision() == "deny")
+      else if(fObject.getDecision() == "drop")
       {
         createLabel("EndResponseHandler:" + parseInt(localID) + ":" + req.url);
 
@@ -420,7 +467,7 @@ function swapp()
     }
 
     // Internal function to handle responses
-    async function handleResponse(resp, decision)
+    async function CEGResponse(resp, decision)
     { 
 			// If the response is invalid to reconstruct, then return the original without processing.
 			if(resp.type == "opaqueredirect" || resp.type == "error" || resp.type == "opaque")
@@ -429,26 +476,46 @@ function swapp()
 			}
 			// Skip if it is a font
 			let contentType = resp.headers.get("Content-Type");
+
 			if((contentType && contentType.includes("font")) || resp.url.includes(".woff") || resp.url.includes(".eot") || resp.url.includes(".otf") || resp.url.includes(".ttf"))
 			{
 				return resp;
 			}
-			// Currently, we skip gif images, but may be useful to inspect gif image later
-			if(contentType && contentType.includes("gif"))
+			// Currently, we skip gif images and CSS, but may be useful to inspect gif image and CSS later
+			if(contentType && (contentType.includes("gif")))
 			{
 				return resp;
 			}
+
+      if(contentType.includes("css"))
+      {
+        return resp;
+      }
 			
       let b = await resp.text();
       let fObject = await processResponse(resp, b, decision);
-      //let fObject = await resp.text().then((body) => processResponse(resp, body, decision));
-			let ret = new Response(fObject.getBody(), fObject.getMetadata());
+      
+      if(fObject.getDecision() == "original")
+      {
+        var ret = new Response(fObject.getOrigBody(), fObject.getOrigMetadata());
+      }
+      else if(fObject.getDecision() == "dirty" || fObject.getDecision() == "cache")
+      {
+        var ret = new Response(fObject.getBody(), fObject.getMetadata());
+      }
+      else if(fObject.getDecision() == "drop")
+      {
+        // Return error page
+        //ret = new Response(fObject.getBody(), fObject.getMetadata());
+      }
+
+			//ret = new Response(fObject.getBody(), fObject.getMetadata());
 			
       return ret;
     }
 
     // External function to handle activate event
-    this.handleActivate = function()
+    this.activateSupervisor = function()
     {
       appCount = apps.length;
       for(let i=0; i<appCount; i++)
@@ -463,7 +530,7 @@ function swapp()
     }
 
     // External function to handle and dispatch postMessage
-    this.handleMessage = function(event)
+    this.messageManager = function(event)
     {
         let label = event.data.label;
         let msg = event.data.msg;

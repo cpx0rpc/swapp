@@ -97,7 +97,7 @@ define("./workbox-sw.js", [], (function() {
             }))*/
 						let ref = this;
 
-						wbApp.reqApply = async function(fObj) {
+						wbApp.reqAction = async function(fObj) {
 							let e = fObj.getMetadata();
 
 							const {
@@ -116,7 +116,7 @@ define("./workbox-sw.js", [], (function() {
               }
               else
               {
-                fObj.setDecision("true");
+                fObj.setDecision("dirty");
               }
 
 							return fObj;
