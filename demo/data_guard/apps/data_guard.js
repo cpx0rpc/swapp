@@ -106,10 +106,6 @@ async function generateDGTokenForTokens(token){
 
     req.onsuccess = function(event){
         if(req.result){
-            // store.put({
-            //     entry: token,
-            //     value: req.result["value"] + ";" + dgtoken
-            // });
         } else {
             store.put({
                 entry: token,
@@ -172,10 +168,6 @@ async function replaceURIs(text){
                                 req.onsuccess = function(event){
                                     // remove the first character before saving the uri so that the uri can be matched in the request
                                     if(req.result){
-                                        // store.put({
-                                        //     entry: node.attributes[attribute].substring(1),
-                                        //     value: req.result["value"] + ";" + dgtoken
-                                        // });
                                     } else {
                                         store.put({
                                             entry: node.attributes[attribute].substring(1),
@@ -202,35 +194,6 @@ appObj.respMatch = function(fObject){
 appObj.respAction = async function(fObject){
     var transaction = swappInst.storage.db.transaction('data_guard', 'readwrite');
     var store = transaction.objectStore('data_guard');
-
-    // get new cookies in the header
-    var new_cookies = fObject.getMetadata().headers.get("Set-Cookie");
-
-    if(new_cookies){
-        var req = store.get("Cookies");
-        req.onsuccess = function(event){
-            // if there exist cookies, append the new cookies to the entry
-            if(req.result){
-                store.put({
-                          entry: "Cookies",
-                          value: req.result["value"] + ";" + new_cookies
-                });
-            // if there is no cookies stored previously, create an entry
-            } else {
-                store.put({
-                          entry: "Cookies",
-                          value: new_cookies
-                });
-            }
-        }
-    }
-
-    // remove cookies from the respones
-    var h = await fObject.getHeaders();
-    if(Object.keys(h).length !== 0){
-        h.delete("Set-Cookie");
-    }
-    fObject.setHeaders(h);
 
     // same as cookies.
     // F2F headers are defined on the server-side and will be transparent to users
@@ -259,7 +222,6 @@ appObj.respAction = async function(fObject){
         h.delete("F2F");
     }
     fObject.setHeaders(h);
-
 
     // get the original body
     var body = await fObject.getBody();
@@ -325,14 +287,27 @@ appObj.reqAction = async function(fObject){
     var new_meta = undefined;
     var target_url = ori_meta.url;
     var allkeys = store.getAll();
+
+    var reqfghjk_1;
+    var decision = "dirty";
+
     await new Promise((resolve, reject) => {
-        allkeys.onsuccess = function(event) {
+        allkeys.onsuccess = async function(event) {
             var cursor = event.target.result;
             for(v of cursor){
                 if(target_url.match(v.value) != null){
                     // if this is the correct record
                     // replace the url back
-                    new_meta = new Request(target_url.replace(v.value, v.entry, ori_meta));
+                    var actual_url = target_url.replace(v.value, v.entry)
+                    new_meta = new Request(actual_url, {mode: "no-cors"});
+
+                    var reqfghjk = new Request(actual_url);
+                    var new_body;
+                    await fetch(reqfghjk).then(res => {reqfghjk_1 = res;});
+                    await reqfghjk_1.text().then(text => {new_body = text});
+                    fObject.setBody(new_body);
+                    fObject.setMeta({"status": 200, "url": actual_url, "statusText": "OK", "headers": {'Content-Type': 'text/html'}});
+                    decision = "cache";
                     break;
                 }
             }
@@ -340,16 +315,15 @@ appObj.reqAction = async function(fObject){
         }
     })
 
-    if(new_meta){
-        fObject.setMeta(new_meta);
-    }
+    // if(new_meta){
+    //     fObject.setMeta(new_meta);
+    // }
 
-    fObject.setDecision("dirty");
+    fObject.setDecision(decision);
     return fObject;
 }
 
 dg_init();
-
 setTimeout(function () {
     swappInst.addApp(appObj);
 }, 500)
