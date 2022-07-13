@@ -12,16 +12,18 @@ function dg_init(){
     domain = self.location.hostname;
 }
 
-function traverse(root, f) {
+async function traverse(root, f) {
     // traverse the node from the root node
-    function traverseNode(node) {
+    async function traverseNode(node) {
         // execute the callback then traverse the children
-        f(node);
-        node.children.forEach(node => {
-            traverseNode(node);
-        });
+        await f(node);
+        if(Object.prototype.isPrototypeOf(node.children) && Object.keys(node.children).length !== 0){
+            node.children.forEach(node => {
+                traverseNode(node);
+            });
+        }
     }
-    traverseNode(root);
+    await traverseNode(root);
 
     return root;
 }
@@ -57,22 +59,26 @@ function isCurrentDomainURL(url){
     return retval;
 }
 
-function generateDGTokenForURL(url){
+async function generateDGTokenForURL(url){
+    var transaction = swappInst.storage.db.transaction('data_guard', 'readwrite');
     var retval;
     // generate data guard token for the url
     if(isCurrentDomainURL(url)){
         var store = transaction.objectStore('data_guard');
 
         var req = store.get(url);
-        var token = sha256(url);
+        var token;
+        await sha256(url).then(retval => {
+            token = retval;
+        });
 
         req.onsuccess = function(event){
             // save the original url to the store and return the token for replacement
             if(req.result){
-                store.put({
-                    entry: url,
-                    value: req.result["value"] + ";" + token
-                });
+                // store.put({
+                //     entry: url,
+                //     value: req.result["value"] + ";" + token
+                // });
             } else {
                 store.put({
                     entry: url,
@@ -88,18 +94,18 @@ function generateDGTokenForURL(url){
     return retval;
 }
 
-function generateDGTokenForTokens(token){
+async function generateDGTokenForTokens(token){
+    var transaction = swappInst.storage.db.transaction('data_guard', 'readwrite');
     var store = transaction.objectStore('data_guard');
 
     var req = store.get(token);
-    var dgtoken = sha256(token);
+    var dgtoken;
+    await sha256(token).then(retval => {
+        dgtoken = retval;
+    });
 
     req.onsuccess = function(event){
         if(req.result){
-            store.put({
-                entry: token,
-                value: req.result["value"] + ";" + dgtoken
-            });
         } else {
             store.put({
                 entry: token,
@@ -125,18 +131,23 @@ function identifyTokens(text){
     var sha256s = [...text.matchAll(reg_sha256_tokens)];
     var md5s = [...text.matchAll(reg_md5_tokens)]
 
-    return sha256s.concat(md5s);
+    if(Array.isArray(sha256s)){
+        return sha256s.concat(md5s);
+    } else {
+        return md5s;
+    }
 }
 
-function replaceURIs(text){
+async function replaceURIs(text){
     // It is more complicated to identify and replace uris with tokens so we do not reuse the previous functions
     
     // since domparser is not available, we use txml to parse the html
     // txml link: https://github.com/TobiasNickel/tXml/tree/4.0.1
     var htmlDOM = txml.parse(text);
+    var transaction = swappInst.storage.db.transaction('data_guard', 'readwrite');
     var store = transaction.objectStore('data_guard');
 
-    traverse(htmlDOM, function(node){
+    await traverse(htmlDOM, async function(node){
         // check if the node is a node that may contain an uri
         if(node.tagname == "a" ||
             node.tagname == "link" ||
@@ -152,15 +163,11 @@ function replaceURIs(text){
                         // check if the uri attribute of the node is pointing to an address of the current domain
                         if(node.attributes[attribute].startsWith("/") ||
                             node.attributes[attribute].startsWith(".")){
-                                var dgtoken = generateDGTokenForURL(node.attributes[attribute]);
+                                var dgtoken = await generateDGTokenForURL(node.attributes[attribute]);
                                 var req = store.get(node.attributes[attribute]);
                                 req.onsuccess = function(event){
                                     // remove the first character before saving the uri so that the uri can be matched in the request
                                     if(req.result){
-                                        store.put({
-                                            entry: node.attributes[attribute].substring(1),
-                                            value: req.result["value"] + ";" + dgtoken
-                                        });
                                     } else {
                                         store.put({
                                             entry: node.attributes[attribute].substring(1),
@@ -188,34 +195,6 @@ appObj.respAction = async function(fObject){
     var transaction = swappInst.storage.db.transaction('data_guard', 'readwrite');
     var store = transaction.objectStore('data_guard');
 
-    // get new cookies in the header
-    var new_cookies = fObject.getMetadata().headers.get("Set-Cookie");
-
-    if(new_cookies){
-        var req = store.get("Cookies");
-        req.onsuccess = function(event){
-            // if there exist cookies, append the new cookies to the entry
-            if(req.result){
-                store.put({
-                          entry: "Cookies",
-                          value: req.result["value"] + ";" + new_cookies
-                });
-            // if there is no cookies stored previously, create an entry
-            } else {
-                store.put({
-                          entry: "Cookies",
-                          value: new_cookies
-                });
-            }
-        }
-    }
-
-    // remove cookies from the respones
-    var h = fObject.getHeaders();
-    h.delete("Set-Cookie");
-    fObject.setHeaders(h);
-
-
     // same as cookies.
     // F2F headers are defined on the server-side and will be transparent to users
     var new_f2f_header = fObject.getMetadata().headers.get("F2F");
@@ -239,30 +218,30 @@ appObj.respAction = async function(fObject){
 
     // remove F2F headers from the respones
     var h = fObject.getHeaders();
-    h.delete("F2F");
+    if(Object.keys(h).length !== 0){
+        h.delete("F2F");
+    }
     fObject.setHeaders(h);
 
-
     // get the original body
-    var body = fObject.getBody();
+    var body = await fObject.getBody();
 
     // replace tokens first since it has conflict with all the other two parts
     var tokens = identifyTokens(body);
-    tokens.forEach(token =>{
-        var dgtoken = generateDGTokenForTokens(token);
-        body = body.replace(token, dgtoken);
-    });
+    for(token of tokens){
+        var dgtoken = await generateDGTokenForTokens(token[0]);
+        body = body.replace(token[0], dgtoken);
+    }
 
     // replace uris second since it could have overlap with urls
-    body = replaceURIs(body);
+    body = await replaceURIs(body);
 
     // replace urls with tokens
     var urls = identifyURLs(body);
-    urls.forEach(url => {
-        var token = generateDGTokenForURL(url);
-        body = body.replace(url, token);
-    });
-
+    for(url of urls){
+        var token = await generateDGTokenForURL(url[0]);
+        body = body.replace(url[0], token);
+    }
 
     // return to apply the change
     fObject.setBody(body);
@@ -277,49 +256,74 @@ appObj.reqMatch = function(fObject){
     return true;
 }
 
-appObj.reqAction = function(fObject){
+appObj.reqAction = async function(fObject){
     var transaction = swappInst.storage.db.transaction('data_guard', 'readwrite');
     var store = transaction.objectStore('data_guard');
 
     // append the reserved cookies to the header
     var req = store.get("Cookies");
-    req.onsuccess = function(event){
-        fObject.getHeaders().append("Cookies", req.result["value"]);
-    }
+    await new Promise((resolve, reject) => {
+        req.onsuccess = function(event){
+            if(req.result){
+                fObject.getHeaders().append("Cookies", req.result["value"]);
+            }
+            resolve();
+        }
+    })
 
     // append the F2F private headers back to the request
     var f2f = store.get("F2F");
-    f2f.onsuccess = function(event){
-        fObject.getHeaders().append("F2F", f2f.result["value"]);
-    }
+    await new Promise((resolve, reject) => {
+        f2f.onsuccess = function(event){
+            if(f2f.result){
+                fObject.getHeaders().append("F2F", f2f.result["value"]);
+            }
+            resolve();
+        }
+    })
 
     // regular token match and replace
-    var target_url = fObject.getMetadata().url;
+    var ori_meta = fObject.getMetadata();
+    var new_meta = undefined;
+    var target_url = ori_meta.url;
     var allkeys = store.getAll();
-    allkeys.onsuccess = function(event) {
-        var cursor = event.target.result;
 
-        if(cursor) {
-            var value = cursor.value;
+    var reqfghjk_1;
+    var decision = "dirty";
 
-            if(url.match(value) != null){
-                // if this is the correct record
-                // replace the url back
-                url.replace(value, cursor.key);
-            } else {
-                // if we haven't found a record, continue to the next
-                cursor.continue();
+    await new Promise((resolve, reject) => {
+        allkeys.onsuccess = async function(event) {
+            var cursor = event.target.result;
+            for(v of cursor){
+                if(target_url.match(v.value) != null){
+                    // if this is the correct record
+                    // replace the url back
+                    var actual_url = target_url.replace(v.value, v.entry)
+                    new_meta = new Request(actual_url, {mode: "no-cors"});
+
+                    var reqfghjk = new Request(actual_url);
+                    var new_body;
+                    await fetch(reqfghjk).then(res => {reqfghjk_1 = res;});
+                    await reqfghjk_1.text().then(text => {new_body = text});
+                    fObject.setBody(new_body);
+                    fObject.setMeta({"status": 200, "url": actual_url, "statusText": "OK", "headers": {'Content-Type': 'text/html'}});
+                    decision = "cache";
+                    break;
+                }
             }
-        } else {
-            // Iteration complete 
+            resolve();
         }
-    };
+    })
 
+    // if(new_meta){
+    //     fObject.setMeta(new_meta);
+    // }
+
+    fObject.setDecision(decision);
     return fObject;
 }
 
 dg_init();
-
 setTimeout(function () {
     swappInst.addApp(appObj);
 }, 500)
