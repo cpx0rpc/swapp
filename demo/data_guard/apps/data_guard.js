@@ -288,7 +288,6 @@ appObj.reqAction = async function(fObject){
     var target_url = ori_meta.url;
     var allkeys = store.getAll();
 
-    var reqfghjk_1;
     var decision = "dirty";
 
     await new Promise((resolve, reject) => {
@@ -301,13 +300,6 @@ appObj.reqAction = async function(fObject){
                     var actual_url = target_url.replace(v.value, v.entry)
                     new_meta = new Request(actual_url);
 
-                    //var reqfghjk = new Request(actual_url);
-                    //var new_body;
-                    //await fetch(reqfghjk).then(res => {reqfghjk_1 = res;});
-                    //await reqfghjk_1.text().then(text => {new_body = text});
-                    //fObject.setBody(new_body);
-                    //fObject.setMeta({"status": 200, "url": actual_url, "statusText": "OK", "headers": {'Content-Type': 'text/html'}});
-                    //decision = "dirty";
                     break;
                 }
             }
