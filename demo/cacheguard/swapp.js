@@ -305,14 +305,10 @@ function swapp()
 
             if(app.hasOwnProperty("reqMatch"))
             {
-								createLabel("StartofAppRequestHandler:" + parseInt(req.id) + ":" + app.appname + ":" + req.url);
-
                 if(await app.reqMatch(fObject))
                 {
                     fObject = await app.reqAction(fObject);
                 }
-
-                createLabel("EndofAppRequestHandler:" + parseInt(req.id) + ":" + app.appname + ":" + req.url);
             }
         }
 
@@ -336,15 +332,11 @@ function swapp()
 
                 if(app.hasOwnProperty("tcbMatch"))
                 {
-										createLabel("StartofAppTCBHandler:" + parseInt(resp.id) + ":" + app.appname + ":" + resp.url);
-
                     if(app.tcbMatch)
                     {
                         // Inject app code into the TCB
                         fObject.setBody(writeBeforeMatchInternal(fObject.getBody(), app.tcbAction, "//__EOF__"));
                     }
-
-                    createLabel("EndofAppTCBHandler:" + parseInt(resp.id) + ":" + app.appname + ":" + resp.url);
                 }
             }
 
@@ -363,14 +355,10 @@ function swapp()
 
                 if(app.hasOwnProperty("respMatch"))
                 {
-										createLabel("StartofAppResponseHandler:" + parseInt(resp.id) + ":" + app.appname + ":" + resp.url);
-
                     if(await app.respMatch(fObject))
                     {
 												fObject = await app.respAction(fObject);
                     }
-
-                    createLabel("EndofAppResponseHandler:" + parseInt(resp.id) + ":" + app.appname + ":" + resp.url);
                 }
             }
 						
@@ -397,49 +385,32 @@ function swapp()
       let localID = currentFetchID;
       req.id = localID;
 
-      createLabel("StartRequestHandler:" + parseInt(localID) + ":" + req.url);
       // Preprocess the request
       let fObject = await CEGRequest(req);
-      createLabel("EndRequestHandler:" + parseInt(localID) + ":" + req.url);
+
       // Proceed to fetch and modify the response accordingly
 
       if(fObject.getDecision() == "original")
       {
-        createLabel("StartActualRequest:" + parseInt(localID) + ":" + req.url);
-
         let resp = await fetch(req);
         resp.id = localID;
 
-        createLabel("EndActualRequestAndStartResponseHandler:" + parseInt(localID) + ":" + req.url);
-
         let ret = await CEGResponse(resp, "original");
 
-        createLabel("EndResponseHandler:" + parseInt(localID) + ":" + req.url);
-
-        getLabels();
         return ret;
       }
       else if(fObject.getDecision() == "dirty")
       {
-        createLabel("StartActualRequest:" + parseInt(localID) + ":" + req.url);
-
         let meta = fObject.getMetadata();
         let resp = await fetch(new Request(meta));
         resp.id = localID;
 
-        createLabel("EndActualRequestAndStartResponseHandler:" + parseInt(localID) + ":" + req.url);
-
         let ret = await CEGResponse(resp, "dirty");
 
-        createLabel("EndResponseHandler:" + parseInt(localID) + ":" + req.url);
-
-        getLabels();
         return ret;
       }
       else if(fObject.getDecision() == "cache")
       {
-        createLabel("StartResponseHandler:" + parseInt(localID) + ":" + req.url);
-
         let r = new Response(fObject.getBody(), fObject.getMetadata());
 
 				Object.defineProperty(r, "type", { value: fObject.getMetadata().type });
@@ -448,21 +419,14 @@ function swapp()
 
         let ret = await CEGResponse(r, "cache");
 
-        createLabel("EndResponseHandler:" + parseInt(localID) + ":" + req.url);
-
-        getLabels();
 				return ret;
       }
       else if(fObject.getDecision() == "drop")
       {
-        createLabel("EndResponseHandler:" + parseInt(localID) + ":" + req.url);
-
-        getLabels();
         return null;
       }
       else{
         //return error
-        createLabel("EndResponseHandler:" + parseInt(localID) + ":" + req.url);
       }
     }
 
@@ -487,7 +451,7 @@ function swapp()
 				return resp;
 			}
 
-      if(contentType.includes("css"))
+      if(contentType && contentType.includes("css"))
       {
         return resp;
       }
@@ -558,13 +522,7 @@ function swapp()
 
                 if(matchedLabel.length > 0)
                 {
-										//let b = performance.now();
                     app.msgHandler(matchedLabel, msg); 
-
-                    // For evaluation
-										//let a = performance.now();
-										//totalAppTime += a-b;
-										//console.log("totalAppTime: ", totalAppTime);
                 }
             }
         }
