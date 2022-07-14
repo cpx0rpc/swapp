@@ -5,7 +5,7 @@ SWAPP is a centralized platform for both web developers and researchers to imple
 ## Installation
 
 ### Docker
-1. Visit our Zenodo archive https://doi.org/10.5281/zenodo.6835845 and download the files.
+1. Visit our Zenodo archive https://doi.org/10.5281/zenodo.6836214 and download the files.
 2. Follow instructions in the README file provided in the artifact.
 
 ### Without Existing SW
