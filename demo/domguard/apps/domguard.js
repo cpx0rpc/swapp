@@ -69,12 +69,10 @@ domguard.msgHandler = function(label, msg) {
   if(msg == "enable") 
   {
     DG_ENABLE = true;
-    console.log("ENABLED");
   }
   else if(msg == "disable") 
   {
     DG_ENABLE = false;  
-    console.log("DISABLED");
   }
 }
 
