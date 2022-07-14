@@ -487,7 +487,7 @@ function swapp()
 				return resp;
 			}
 
-      if(contentType.includes("css"))
+      if(contentType && contentType.includes("css"))
       {
         return resp;
       }

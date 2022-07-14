@@ -403,11 +403,11 @@ function swapp()
       createLabel("EndRequestHandler:" + parseInt(localID) + ":" + req.url);
       // Proceed to fetch and modify the response accordingly
 
-      if(fObject.getDecision() == "original" || fObject.getDecision() == "dirty")
+      if(fObject.getDecision() == "original")
       {
         createLabel("StartActualRequest:" + parseInt(localID) + ":" + req.url);
 
-        let resp = await fetch(fObject.getMetadata());
+        let resp = await fetch(req);
         resp.id = localID;
 
         createLabel("EndActualRequestAndStartResponseHandler:" + parseInt(localID) + ":" + req.url);
