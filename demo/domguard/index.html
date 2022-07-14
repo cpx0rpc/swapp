@@ -1,0 +1,46 @@
+<head>
+	<title> Project Test </title>
+</head>
+
+<body>
+	<p id="vulnerable"> Hello random person </p> 
+
+	<script>
+		navigator.serviceWorker.register("sw.js");
+
+    // Vulnerable code
+    var params = new URLSearchParams(document.location.search);
+
+    // Document sink
+    var name = params.get('name');
+    if(name !== "null") 
+    {
+      document.getElementById('vulnerable').innerHTML = 'Hello ' + name;
+    }
+
+    function enableDOMGuard()
+    {
+      console.log("DOMGuard Enabled");
+      const enableEvent = new Event("enableDOMGuard");
+      document.dispatchEvent(enableEvent);
+    }
+    function disableDOMGuard()
+    {
+      console.log("DOMGuard Disabled");
+      const disableEvent = new Event("disableDOMGuard");
+      document.dispatchEvent(disableEvent);
+    }
+	</script>
+
+  <button onclick="enableDOMGuard()">ENABLE</button>
+  <button onclick="disableDOMGuard()">DISABLE</button>
+
+  <br><br><br>
+  Step to test: <br>
+  1. Reload this page to ensure SWAPP is fully activated. <br>
+  2. This web page contains a DOM-XSS vulnerability. Try Exploiting it by pasting the following URL into the address bar. <br>
+  http://localhost/demo/domguard/index.html?name=patrick%3Cimg+src+onerror=alert(1)%3E <br>
+  3. The exploit should not work. Now try clicking the DISABLE button to disable DOM Guard. <br>
+  4. Revisit the exploit URL in steps 2 to see that now the exploits work. <br>
+  Note that DOM Guard utilizes existing filters to detect an exploit. The (in)ability to detect an exploit is not our contribution.
+</body>
