@@ -1,309 +1,138 @@
 <html>
 <head>
-	<title> Test Cache Guard </title>
+  <title> Cache Guard Demo </title>
 </head>
 <body>
-	
-	<script>
-		navigator.serviceWorker.register("sw.js");
 
-    let resultBufferA = [];
-    let resultBufferB = [];
-    let currentFetchID = 0;
+  <div id="timer">  </div> <br>
 
-    function makeid(length) 
+  <h2> Steps to test </h2>
+  <p>
+    0. Open Chrome's DevTools. Go to Network tab and click "Disable cache" and change the network profile from "No throttling" to "Slow 3G". <br>
+    1. Refresh this web page to make sure the service worker is activated. <br>
+    2. Click <button onclick="coldStart()"> Cold Start </button> to have Cache Guard learn about the average of network delays. <br>
+    3. Click <button onclick="attackStart()"> Attack </button> within 30s of the timer to start the attack. <br>
+    4. Observe the Request Load Times. The first attack request should take as long as the non-cache load time observed. <br>
+    5. Click <button onclick="attackStart()"> Attack </button> again within 30s of the timer to try loading the target cached request. This time subsequent requests should take shorter time to load. This is because the attackers need to rely on the very first request. Subsequent requests can be served normally (i.e., cached content being served instantly without delays from Cache Guard). <br>
+    6. Click <button onclick="attackStart()"> Attack </button> again after 30s of the timer. This time the load time should be similar to non-cache load time due to the request is being fetched out of nowhere, indicating a possible attack. <br>
+Note that it normally takes larger than 10% differences in load time to successfully attack.
+
+  </p>
+
+  <br><br>
+  <h2> Request Load Times </h2>
+  <div id="loadtime">
+
+  </div>
+
+  <script>
+    navigator.serviceWorker.register("sw.js");
+
+    var coldStartBuffer = [];
+
+    var params = new URLSearchParams(window.location.search);
+    var isAttack = params.get("attack") || null;
+    var prevAvg = params.get("coldStart") || null;
+    var avg = 0;
+    var second = 0;
+
+    if(isAttack && prevAvg && isAttack == "true")
     {
-        var result           = [];
-        var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        var charactersLength = characters.length;
-        for ( var i = 0; i < length; i++ ) 
-        {
-            result.push(characters.charAt(Math.floor(Math.random() * charactersLength)));
-        }
+      let b = document.getElementById("cs_avg");
 
-        return result.join('');
+      b.innerHTML = prevAvg;
+      avg = parseFloat(prevAvg);
+      attackStart();
     }
 
-    function addIframe(url, row, config)
-    {
-      currentFetchID += 1;
-      let localID = currentFetchID;
+    let visitTime = (new Date()).getTime();
 
+    function showClock(){
+        var t = document.getElementById("timer");
+        second += 1;
+        t.innerHTML = `Timer: ${second}`;
+    }
+
+    setInterval(showClock, 1000);
+
+    function addIframe(url, config)
+    {
       var iframe = document.createElement("iframe");
       iframe.style = "position: absolute;width:0;height:0;border:0;";
       document.body.appendChild(iframe);
 
       iframe.onload = function(event) {
         let duration = performance.now() - start;
-        createLabel("DoneIframe:" + localID + ":" + url);
 
         duration = parseFloat(duration.toFixed(3));
 
-        console.log(url, duration);
-
-        if(config == "A")
+        if(config == "coldstart")
         {
-          resultBufferA.push(duration);
-          let cell = row.insertCell(1);
-          cell.innerHTML = duration;
+          coldStartBuffer.push(duration);
+          let loadtime = document.getElementById("loadtime");
+          loadtime.innerHTML = loadtime.innerHTML + "<br> Total non-cache load time observed: &emsp;" + duration.toFixed(2);
         }
-        else if(config == "B")
+        else if(config == "attack")
         {
-          resultBufferB.push(duration);
-          let cell = row.insertCell(2);
-          cell.innerHTML = duration;
+          let diff = 100 - (duration/avg)*100;
+          let loadtime = document.getElementById("loadtime");
+          
+          if(diff > 0)
+          {
+            loadtime.innerHTML = loadtime.innerHTML + "<br> Total cached load time observed: &emsp;&emsp; " + duration.toFixed(2) + "&emsp;&emsp; -" + diff.toFixed(2) + "%";
+          }
+          else
+          {
+            loadtime.innerHTML = loadtime.innerHTML + "<br> Total cached load time observed: &emsp;&emsp; " + duration.toFixed(2) + "&emsp;&emsp; +" + Math.abs(diff.toFixed(2)) + "%";
+          }
         }
 
         iframe.remove();
       }
 
       var start = performance.now();
-      createLabel("CreateIframe:" + localID + ":" + url);
+
       iframe.src = url;
     }
 
-    function startCompare(row, filename)
+    function coldStart()
     {
-      addIframe(filename, row, "A");
-      addIframe(filename + "?" + makeid(10), row, "B");
+      addIframe("datanocache.json", "coldstart");
     }
 
-    function resetCacheGuard()
+    function attackStart()
     {
-      const startEvent = new Event("resetCacheGuard");
-      document.dispatchEvent(startEvent);
+      avg = coldStartBuffer[0];
+      addIframe("data.json", "attack");
     }
 
-    function clearTable()
+    function calculate()
     {
-      let t = document.getElementById("results");
-      let numrow = t.rows.length;
-      
-      for(let i=1; i<numrow; i++)
+      let total = 0;
+
+      if(coldStartBuffer.length == 10)
       {
-        t.deleteRow(1);
-      }
-    }
-
-    async function startMeasure(profiling, caching)
-    {
-      clearTable();
-
-      let totalA = 0;
-      let totalB = 0;
-      let n = parseInt(document.getElementById("n").value) || 100;
-      let d = parseInt(document.getElementById("d").value) || 1500;
-      let t = document.getElementById("results");
-
-      for(let i=0; i<n; i++)
-      {
-        var row = t.insertRow(i+1);
-        var c = row.insertCell(0);
-        c.innerHTML = i+1;
-        console.log("Iteration ", i+1);
-
-        if(caching)
+        for(let i=0; i<10; i++)
         {
-          startCompare(row, "data.json");
-        }
-        else
-        {
-          startCompare(row, "datanocache.json");
+          total += coldStartBuffer[i];
         }
 
-        if(!profiling)
-        {
-          resetCacheGuard();
-        }
+        let b = document.getElementById("cs_avg");
+        let a = total/10;
 
-        await sleep(d);
-      }
-
-      for(let i=0; i<n; i++)
-      {
-        totalA += resultBufferA[i];
-        totalB += resultBufferB[i];
-
-        let c = t.rows[i+1].insertCell(3);
-        let diff = 100 - (resultBufferA[i]/resultBufferB[i])*100;
-        if(diff > 0)
-        {
-          c.innerHTML = "-" + diff.toFixed(3) + "%";
-        }
-        else
-        {
-          c.innerHTML = "+" + Math.abs(diff.toFixed(3)) + "%";
-        }
-      }
-
-      let avgA = totalA/n;
-      avgA = avgA.toFixed(3);
-      let avgB = totalB/n;
-      avgB = avgB.toFixed(3);
-
-      let r = t.insertRow(n+1);
-      let c0 = r.insertCell(0);
-      c0.innerHTML = "Average";
-      let c1 = r.insertCell(1);
-      c1.innerHTML = avgA;
-      let c2 = r.insertCell(2);
-      c2.innerHTML = avgB;
-      let c3 = r.insertCell(3);
-      let diff = 100 - (avgA/avgB)*100;
-      if(diff>0)
-      {
-        c3.innerHTML = "-" + diff.toFixed(3) + "%";
+        b.innerHTML = a.toFixed(2);
       }
       else
       {
-        c3.innerHTML = "+" + Math.abs(diff.toFixed(3)) + "%";
+        console.log("Please wait until all requests are finished and click again.");
       }
-      console.log("Average No Params: ", totalA/n);
-      console.log("Average With Params: ", totalB/n);
-
-      resultBufferA = [];
-      resultBufferB = [];
     }
 
-    function sleep(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    // Utility functions (timing measurement) for evaluation only
-
-    function EStorage() {
-        this.ready = new Promise((resolve, reject) => {
-            var request = indexedDB.open('SWAPP_EVALUATION');
-
-            request.onupgradeneeded = e => {
-                this.db = e.target.result;
-                this.db.createObjectStore('store');
-            };
-
-            request.onsuccess = e => {
-                this.db = e.target.result;
-                resolve();
-            };
-
-            request.onerror = e => {
-                this.db = e.target.result;
-                reject(e);
-            };
-        });
-    }
-
-    EStorage.prototype.getAll = function() {
-        var obj = this;
-        return this.ready.then(() => {
-            return new Promise((resolve, reject) => {
-                var request = obj.getStore().getAll();
-                request.onsuccess = e => resolve(e.target.result);
-                request.onerror = reject;
-            });
-        });
-    };
-
-    EStorage.prototype.getStore = function() {
-        return this.db
-            .transaction(['store'], 'readwrite')
-            .objectStore('store');
-    };
-
-    EStorage.prototype.set = function(key, value) {
-        var obj = this;
-        return this.ready.then(() => {
-            return new Promise((resolve, reject) => {
-                var request = obj.getStore().put(value, key);
-                request.onsuccess = resolve;
-                request.onerror = reject;
-            });
-        });
-    };
-
-    EStorage.prototype.delete = function(key, value) {
-        indexedDB.deleteDatabase(location.origin);
-    };
-
-    let edb = new EStorage();
-
-    function createLabel(label)
+    function attack()
     {
-      // Save a time-label to the dedicated storage
-
-      let t = performance.now() + performance.timeOrigin;
-      edb.set(t, {"time": t, "label": label});
+      let avg = document.getElementById("cs_avg").innerHTML;
+      window.location = "http://localhost/demo/cacheguard/index.html?attack=true&coldStart=" + avg;
     }
-
-    async function getLabels()
-    {
-      let labels = await edb.getAll();
-      let results = [];
-
-      for(let i=0; i<labels.length; i++)
-      {
-        let arr = labels[i].label.split(":", 3);
-        let g = parseInt(arr[1]);
-        
-        if(results[g])
-        {
-          results[g].push(labels[i]);
-
-        }
-        else
-        {
-          results[g] = [labels[i]];
-        }
-      }
-
-      for(let i=0; i<results.length; i++)
-      {
-        if(results[i] && results[i].length > 0)
-        {
-          for(let j=results[i].length-1; j>0; j--)
-          {
-            results[i][j]["time"] = results[i][j]["time"] - results[i][j-1]["time"];
-          }
-        }
-      }
-
-      console.log(results);
-    }
-    
-	</script>
-  Number of iterations: <input type="text" id="n" value="5"></input> <br>
-  Time delay between iterations: <input type="text" id="d" value="1500"></input> <br>
-	<button onclick="startMeasure(true, false)">Start No Cache</button>
-  <button onclick="startMeasure(true, true)">Start Cache</button>
-  <button onclick="startMeasure(false, true)">Start Cache No Profile</button>
-  <button onclick="resetCacheGuard()">Reset Profile</button>
-
-  <br><br>
-  <h3>Start No Cache:</h3> 
-  Start evaluating and calculate the load time of a resource with n iterations (n given in the text area). The resource is not cached and loaded through network only. Can be used to learn the network delay for this demo. <br><br>
-
-  <h3>Start Cache:</h3>
-  Start evaluating and calculate the load time of a resource with n iterations (n given in the text area). The resource is cached and loaded through cache. CacheGuard is activated and working normally. If the button is pressed within 30 seconds of the page load, CacheGuard will profile the resource to be valid for subsequent iterations. The first iteration should show the load time similar to network loadings despite it being loaded from cache. Subsequent loads should show lower load time. This configuration simulates a benign situation how a page's profile is built. After the first time, the cache should work normally.<br><br> 
-
-  <h3>Start Cache No Profile:</h3>
-  Start evaluating and calculate the load time of a resource with n iterations (n given in the text area). The resource is cached and loaded through cache. CacheGuard is activated but profiling is disabled. Therefore, all iterations will have a delay and should load similar to network loadings. This configuration simulates a malicious situation when a resource is loaded out of no where by attacker to measure the timing. <br><br> 
-
-  <h3>Step to test:</h3>
-  1. Open Chrome DevTools and remove all website's content in the Application>Storage>Clear Site Data. <br>
-  2. Go to the Network Tab and disable cache (this is HTTP cache, a different type of caching). Select the network condition to Fast 3G. <br>
-  3. Reload the page and click on Start No Cache to learn about the website's average network delay. <br>
-  4. Next, try out other two options: Start Cache and Start Cache No Profile. (More details on what they do are elaborated above. <br>
-  5. See the result at the bottome of the page. You can select the number of iterations and delay timing in the text area. <br>
-  <br><br>
-  Note that the very first test does not have any profile and no average delay is known by Cache Guard. Therefore, Cache Guard will delay for 0ms for the very first time. <br><br>
-
-  <h2>Results</h2> 
-  <table id="results">
-    <tr>
-      <th>Iteration |</th>
-      <th>No parameter (A) |</th>
-      <th>With parameter (B) |</th>
-      <th>A/B%</th>
-    </tr>
-  </table>
+  </script>
 </body>
 </html>

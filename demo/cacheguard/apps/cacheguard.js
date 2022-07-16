@@ -43,6 +43,7 @@ cacheGuard.load = async function() {
 }
 
 cacheGuard.save = function() {
+  console.log("Current average network delay: ", cacheGuard.session.u);
   swappInst.storage.set("cacheGuard", cacheGuard.session);
 }
 
