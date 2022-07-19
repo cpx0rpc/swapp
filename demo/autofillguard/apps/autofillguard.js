@@ -193,7 +193,7 @@ autofillguard.reqAction = function(fObj)
 			});
 
 			fObj.setMeta({"status": 200, "url": url.toString(), "statusText": "OK", "headers": {'Content-Type': 'text/html'}});
-			fObj.setBody("[AG] Loading");
+			fObj.setBody("[AG] Loading <script> setTimeout(function() {window.location = 'http://localhost/demo/autofillguard/'}, 1000); </script>");
 			fObj.setDecision("cache");
 		}
 		else
