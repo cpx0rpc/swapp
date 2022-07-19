@@ -93,7 +93,7 @@ autofillguard.respAction = async function(fObj)
 
 				if(autofillguard.actionMatch.constructor === Array)
 				{
-					for(a in autofillguard.actionMatch)
+					for(a of autofillguard.actionMatch)
 					{ 
 						if(found.match(a))
 						{
@@ -135,6 +135,8 @@ autofillguard.reqMatch = function(fObj)
 	let url = new URL(fObj.getMetadata().url);
 	let params = url.searchParams;
 	let gID = params.get('autofillguardID');
+
+  if(fObj.getMetadata().url == "http://localhost/demo/autofillguard/ucp.php?mode=login&redirect=index.php") return false;
 
 	if(gID && gID in autofillguard.mTable)
 	{
@@ -221,7 +223,7 @@ handlers.push(autofillguard);
 
 // For evaluation
 autofillguard.setRespMatchPath(/http\:\/\/localhost\/demo\/autofillguard\/($|index\.php\??)/);
-autofillguard.setActionMatch(/ucp.php/);
+autofillguard.setActionMatch(/ucp.php\?mode=login$/);
 
 console.log("[A]utofill[G]uard activated!");
 swappInst.addApp(autofillguard);
