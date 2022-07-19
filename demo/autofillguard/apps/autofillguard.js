@@ -33,7 +33,7 @@ autofillguard.respMatch = function(fObj)
 
 	if(autofillguard.respMatchPath.constructor === Array)
 	{
-		for(p in autofillguard.respMatchPath)
+		for(p of autofillguard.respMatchPath)
 		{ 
 			if(p.constructor === RegExp && urlString.match(p))
 			{
@@ -117,7 +117,7 @@ autofillguard.respAction = async function(fObj)
 					autofillguard.iTable[u.pathname] = autofillguard.curr_id;
 					autofillguard.mTable[autofillguard.curr_id] = s;
 
-					body = body.replace(form_match_exp, "<iframe src=" + url.href + "?autofillguardID=" + autofillguard.curr_id + " frameBorder=0></iframe>");
+					body = body.replace(form_match_exp, "<iframe src=" + url.href.replace(/index\.php.*/, "") + "?autofillguardID=" + autofillguard.curr_id + " frameBorder=0></iframe>");
 					fObj.setBody(body);
 					fObj.setDecision("dirty");
 
@@ -220,7 +220,7 @@ handlers.push(autofillguard);
 `;
 
 // For evaluation
-autofillguard.setRespMatchPath("http://localhost/demo/autofillguard/");
+autofillguard.setRespMatchPath(/http\:\/\/localhost\/demo\/autofillguard\/($|index\.php\??)/);
 autofillguard.setActionMatch(/ucp.php/);
 
 console.log("[A]utofill[G]uard activated!");
