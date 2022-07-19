@@ -8,7 +8,7 @@ self.importScripts("swapp.js");
 
 // These scripts are for example apps
 
-self.importScripts("./apps/autofillguard.js");
+self.importScripts("/demo/autofillguard/apps/autofillguard.js");
 
 self.addEventListener('activate', event => {
   // Don't need this here, but convenient for testing.
